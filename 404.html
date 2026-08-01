@@ -7,15 +7,12 @@
   // ============================================================
   // Truque padrão para URLs limpas no GitHub Pages (spa-github-pages).
   //
-  // AJUSTE ESTA LINHA conforme o tipo de site no GitHub:
-  //   - Site de USUÁRIO/ORGANIZAÇÃO (repositório chamado
-  //     "seu-usuario.github.io", endereço final tipo
-  //     https://seu-usuario.github.io/)                -> deixe em 0
-  //   - Site de PROJETO (qualquer outro nome de repositório,
-  //     endereço final tipo
-  //     https://seu-usuario.github.io/nome-do-repo/)    -> deixe em 1
+  // Este repositório é publicado como Project Page em:
+  //   https://clinicasonnendev.github.io/sagrada-e-profana/
+  // por isso pathSegmentsToKeep fica em 1 (mantém o "/sagrada-e-profana"
+  // do início da URL). Só mude se o endereço do site mudar de formato.
   // ============================================================
-  var pathSegmentsToKeep = 0;
+  var pathSegmentsToKeep = 1;
 
   var l = window.location;
   l.replace(
