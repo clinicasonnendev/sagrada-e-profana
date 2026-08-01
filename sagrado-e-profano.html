@@ -734,114 +734,63 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* =====================================================================
-   DADOS (em memória)
+   SUPABASE — conexão com o banco real
 ===================================================================== */
-let livros = [
-  {id:1, numero:'I', nome:'Gênesis', epigrafe:'No princípio era o silêncio, e o silêncio se chamava Nona.', selado:false},
-  {id:2, numero:'II', nome:'Êxodo', epigrafe:'Toda travessia começa com a coragem de abandonar um deus antigo.', selado:false},
-  {id:3, numero:'III', nome:'Levítico', epigrafe:'Os ritos do corpo também são orações.', selado:false},
-  {id:4, numero:'IV', nome:'Números', epigrafe:'Contei os dias perdidos e ainda faltam mais do que os que restam.', selado:false},
-  {id:5, numero:'V', nome:'Deuteronômio', epigrafe:'A lei que escrevo é só para quem ficar depois de mim.', selado:false},
-  {id:6, numero:'VI', nome:'Apocalipse', epigrafe:'O véu ainda não se rasgou. Em breve.', selado:true},
-];
+const SUPABASE_URL = 'https://txpkvmxrgfywbmekdkhh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_L9CIX6e_N12tXJptNzXXKA_6vUj7b2r';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let posts = [
-  {id:1, titulo:'Antes da Primeira Palavra', livroId:1, status:'publicado', data:'2026-02-03',
-    resumo:'Sobre o silêncio que existia antes de qualquer coisa ser dita — e o que ele ainda guarda.',
-    conteudo:`Antes da primeira palavra havia um silêncio tão espesso que se podia tocá-lo com as mãos. Nona diz que foi nesse silêncio que aprendeu a rezar, muito antes de saber o nome de qualquer deus.
-
-Não era um silêncio vazio. Era um silêncio cheio de tudo o que ainda não tinha coragem de acontecer. Havia nele o formato exato de cada palavra que viria depois — como uma fôrma esperando o barro.
-
-Quando finalmente a primeira palavra foi dita, não foi um grito nem uma ordem. Foi uma confissão. E é assim que todo texto sagrado começa: não com autoridade, mas com a vergonha de existir.`,
-    tags:['origem','silêncio','fé'], metaTitulo:'Antes da Primeira Palavra — Sagrado e Profano', metaDesc:'Um texto de Nona sobre o silêncio que precede toda palavra, e o que ele revela sobre o começo de tudo.', slug:'antes-da-primeira-palavra', keyword:'silêncio', views:842},
-  {id:2, titulo:'O Barro Que Sonhou', livroId:1, status:'publicado', data:'2026-02-10',
-    resumo:'Uma releitura íntima da criação, contada do ponto de vista do próprio barro.',
-    conteudo:`Diz-se que fomos feitos de barro, mas ninguém pergunta o que o barro sentiu ao ser feito gente. Nona imagina essa cena como quem lembra de um sonho antigo: o barro não queria virar corpo, queria continuar sendo terra, sem pressa, sem nome.
-
-Mas alguém soprou. E o barro, contra a própria vontade de permanecer disforme, aprendeu a ter fome, a ter frio, a ter desejo.
-
-Talvez seja por isso que carregamos essa saudade estranha de voltar ao chão. Não é medo da morte — é nostalgia do barro que ainda não tinha sido obrigado a sonhar.`,
-    tags:['criação','corpo','desejo'], metaTitulo:'O Barro Que Sonhou — Sagrado e Profano', metaDesc:'Nona reimagina a criação do ponto de vista do barro, entre a resistência e o desejo de se tornar corpo.', slug:'o-barro-que-sonhou', keyword:'barro', views:611},
-
-  {id:3, titulo:'A Travessia do Deserto Interior', livroId:2, status:'publicado', data:'2026-02-18',
-    resumo:'Sobre os desertos que atravessamos sem sair do lugar.',
-    conteudo:`Há travessias que ninguém vê, porque acontecem por dentro. Nona escreve sobre o deserto que se atravessa sem tirar os pés do chão — o deserto de deixar de acreditar em algo que sustentava tudo.
-
-Quarenta dias, diz a história antiga. Nona não sabe quantos foram os seus, só sabe que em algum momento a sede parou de doer e virou hábito.
-
-No fim de todo deserto há sempre uma promessa — mas às vezes a promessa é apenas a de que se pode continuar andando mesmo sem chegar a lugar nenhum.`,
-    tags:['travessia','exílio'], metaTitulo:'A Travessia do Deserto Interior — Sagrado e Profano', metaDesc:'Um texto sobre os desertos internos que atravessamos ao abandonar antigas certezas.', slug:'a-travessia-do-deserto-interior', keyword:'deserto', views:734},
-  {id:4, titulo:'Quarenta Noites Sem Deus', livroId:2, status:'rascunho', data:'2026-03-01',
-    resumo:'O que resta da fé quando ela se ausenta por um tempo.',
-    conteudo:`Houve um tempo em que Nona parou de rezar, não por raiva, mas por cansaço. Quarenta noites, conta ela, sem dirigir a palavra a nada além do teto.
-
-Ninguém avisa que a ausência de deus também tem seu próprio ritual: acender a luz sozinha, comer sem agradecer, dormir sem pedir perdão por nada.
-
-E então, na noite quarenta e um, sem anúncio nem trombeta, veio de volta — não como certeza, mas como hábito de olhar para cima antes de dormir.`,
-    tags:['dúvida','fé'], metaTitulo:'', metaDesc:'', slug:'quarenta-noites-sem-deus', keyword:'', views:0},
-
-  {id:5, titulo:'Os Ritos do Corpo', livroId:3, status:'publicado', data:'2026-03-09',
-    resumo:'O corpo como altar, o gesto cotidiano como oferenda.',
-    conteudo:`Nona acredita que todo gesto repetido vira rito, e todo rito vira uma forma de oração — mesmo quando ninguém o chama assim. Escovar os dentes, acender um cigarro, tocar a própria pele no escuro: tudo isso é liturgia.
-
-A diferença entre o sagrado e o profano, escreve ela, não está no gesto, mas na atenção que se dedica a ele.
-
-Por isso este livro se chama Levítico: porque fala das leis não-escritas do corpo, as que a gente cumpre sem saber que está cumprindo.`,
-    tags:['corpo','ritual'], metaTitulo:'Os Ritos do Corpo — Sagrado e Profano', metaDesc:'Nona escreve sobre como os gestos cotidianos do corpo se tornam formas silenciosas de oração.', slug:'os-ritos-do-corpo', keyword:'corpo', views:958},
-  {id:6, titulo:'Ofertas Que Ninguém Pediu', livroId:3, status:'publicado', data:'2026-03-15',
-    resumo:'Sobre os sacrifícios que fazemos sem que ninguém os tenha exigido.',
-    conteudo:`Fazemos ofertas o tempo todo, mesmo sem altar. Abrimos mão de coisas que ninguém pediu, na esperança de que isso compre algum tipo de paz.
-
-Nona chama isso de "sacrifício sem sacerdote": a dieta que ninguém mandou fazer, o silêncio que ninguém exigiu, o perdão que foi dado antes mesmo do pedido de desculpas.
-
-Talvez a fé mais pura seja essa — a de continuar oferecendo, mesmo sem certeza de que existe alguém do outro lado para receber.`,
-    tags:['sacrifício','fé'], metaTitulo:'Ofertas Que Ninguém Pediu — Sagrado e Profano', metaDesc:'Um texto sobre os pequenos sacrifícios cotidianos que fazemos sem que ninguém os tenha exigido.', slug:'ofertas-que-ninguem-pediu', keyword:'sacrifício', views:503},
-
-  {id:7, titulo:'Contagem dos Dias Perdidos', livroId:4, status:'publicado', data:'2026-03-22',
-    resumo:'Um inventário íntimo do tempo que se foi sem deixar endereço.',
-    conteudo:`Nona começou a contar os dias perdidos como quem faz um censo particular. Não os dias ruins — os dias que simplesmente não deixaram marca nenhuma.
-
-Descobriu que são muitos. Mais do que os dias que lembra com nitidez, mais até do que os dias felizes.
-
-E ainda assim, escreve ela, cada dia perdido também contou para alguma coisa: para o cansaço que a trouxe até aqui, para a paciência que aprendeu sem perceber.`,
-    tags:['tempo','memória'], metaTitulo:'Contagem dos Dias Perdidos — Sagrado e Profano', metaDesc:'Nona faz um inventário íntimo dos dias que passaram sem deixar marca — e do que eles significam.', slug:'contagem-dos-dias-perdidos', keyword:'tempo', views:389},
-  {id:8, titulo:'A Genealogia das Sombras', livroId:4, status:'publicado', data:'2026-03-29',
-    resumo:'Um mapa de quem nos gerou por dentro, além do sangue.',
-    conteudo:`Toda pessoa carrega uma genealogia dupla: a do sangue e a das sombras. Nona traça a segunda — as pessoas, medos e silêncios que a geraram por dentro sem parentesco algum.
-
-Há uma avó que nunca conheceu mas cujo jeito de calar herdou. Há um medo que não nasceu com ela, mas que criou raízes como se tivesse.
-
-Escrever essa genealogia, diz Nona, é uma forma de finalmente apresentar essas sombras umas às outras — e talvez, com sorte, fazer as pazes com a árvore inteira.`,
-    tags:['herança','sombra'], metaTitulo:'A Genealogia das Sombras — Sagrado e Profano', metaDesc:'Nona traça a genealogia invisível dos medos e silêncios que a formaram, além do parentesco de sangue.', slug:'a-genealogia-das-sombras', keyword:'sombra', views:445},
-
-  {id:9, titulo:'A Segunda Lei do Coração', livroId:5, status:'publicado', data:'2026-04-05',
-    resumo:'Quando a primeira lei falha, escreve-se uma segunda, mais honesta.',
-    conteudo:`A primeira lei do coração de Nona dizia: ame sem medir. Ela falhou algumas vezes, então escreveu uma segunda.
-
-A segunda lei é mais modesta: ame, mas guarde uma chave. Não por desconfiança, mas por respeito à própria sobrevivência.
-
-Não é uma lei mais fria — é uma lei mais velha, escrita por alguém que já sabe que sobreviver ao amor também é uma forma de honrá-lo.`,
-    tags:['amor','lei'], metaTitulo:'A Segunda Lei do Coração — Sagrado e Profano', metaDesc:'Nona escreve sobre a lei mais honesta que aprendeu depois que a primeira, a de amar sem medir, falhou.', slug:'a-segunda-lei-do-coracao', keyword:'amor', views:1204},
-  {id:10, titulo:'Testamento Para Quem Ficar', livroId:5, status:'publicado', data:'2026-04-12',
-    resumo:'O que Nona deixaria escrito se este fosse o último texto.',
-    conteudo:`Se este fosse o último texto, Nona diz que gostaria que ele servisse de testamento — não de bens, mas de instruções para continuar sentindo depois que ela for embora.
-
-Deixaria escrito: chorem pouco, leiam bastante, não tenham pressa de fechar as feridas alheias.
-
-E deixaria também um pedido final: que o sexto livro, quando vier, seja lido devagar. Porque tudo que é apocalipse também é revelação — e revelação não se apressa.`,
-    tags:['legado','despedida'], metaTitulo:'Testamento Para Quem Ficar — Sagrado e Profano', metaDesc:'Um texto-testamento de Nona, com instruções para quem ficar depois que as palavras dela pararem.', slug:'testamento-para-quem-ficar', keyword:'legado', views:876},
-];
-
-let comentarios = [
-  {id:1, quem:'Marina R.', texto:'Chorei lendo "A Segunda Lei do Coração". Obrigada por escrever isso, Nona.', post:'A Segunda Lei do Coração', status:'aprovado', data:'2 dias atrás'},
-  {id:2, quem:'anônimo', texto:'O texto sobre o barro me fez repensar minha relação com meu próprio corpo.', post:'O Barro Que Sonhou', status:'pendente', data:'5 dias atrás'},
-  {id:3, quem:'J.', texto:'Quando sai o Apocalipse?? Preciso saber.', post:'Testamento Para Quem Ficar', status:'pendente', data:'1 semana atrás'},
-  {id:4, quem:'Helena', texto:'Releio "Os Ritos do Corpo" toda vez que preciso me lembrar de ser gentil comigo mesma.', post:'Os Ritos do Corpo', status:'aprovado', data:'2 semanas atrás'},
-];
-
+/* =====================================================================
+   DADOS (carregados do Supabase — ver schema.sql)
+===================================================================== */
+let livros = [];
+let posts = [];
+let comentarios = [];
 let editingId = null;
+
+async function loadLivros(){
+  const {data, error} = await db.from('livros').select('*').order('ordem', {ascending:true});
+  if(error){ console.error(error); showToast('Erro ao carregar livros do Supabase.'); return; }
+  livros = (data||[]).map(l=>({id:l.id, numero:l.numero, nome:l.nome, epigrafe:l.epigrafe, selado:l.selado}));
+}
+
+async function loadPosts(){
+  const {data, error} = await db.from('posts').select('*').order('data', {ascending:false});
+  if(error){ console.error(error); showToast('Erro ao carregar posts do Supabase.'); return; }
+  posts = (data||[]).map(p=>({
+    id:p.id, titulo:p.titulo, livroId:p.livro_id, status:p.status, data:p.data,
+    resumo:p.resumo, conteudo:p.conteudo, tags:p.tags||[], metaTitulo:p.meta_titulo,
+    metaDesc:p.meta_desc, slug:p.slug, keyword:p.keyword, views:p.views||0
+  }));
+}
+
+async function loadComentarios(){
+  const {data, error} = await db.from('comentarios').select('*, posts(titulo)').order('created_at', {ascending:false});
+  if(error){ console.error(error); showToast('Erro ao carregar comentários do Supabase.'); return; }
+  comentarios = (data||[]).map(c=>({
+    id:c.id, quem:c.quem, texto:c.texto, postId:c.post_id,
+    post: c.posts ? c.posts.titulo : '(post removido)',
+    status:c.status, data: timeAgo(c.created_at)
+  }));
+}
+
+function timeAgo(iso){
+  const diff = (Date.now()-new Date(iso).getTime())/1000;
+  const dias = Math.floor(diff/86400);
+  if(dias<1) return 'hoje';
+  if(dias===1) return '1 dia atrás';
+  if(dias<7) return `${dias} dias atrás`;
+  const sem = Math.floor(dias/7);
+  if(sem===1) return '1 semana atrás';
+  return `${sem} semanas atrás`;
+}
+
+async function loadAll(){
+  await Promise.all([loadLivros(), loadPosts(), loadComentarios()]);
+}
 
 /* =====================================================================
    NAVEGAÇÃO — SITE
@@ -912,12 +861,14 @@ function abrirPost(id){
     <a href="#" class="reader-back" onclick="abrirLivro(${l.id});return false;">&larr; voltar ao Livro ${l.numero}</a>
     <div class="reader-tag">Livro ${l.numero} · ${l.nome}</div>
     <h1>${p.titulo}</h1>
-    <div class="reader-meta">${formatDate(p.data)} · por Nona · ${p.views||0} leituras</div>
+    <div class="reader-meta">${formatDate(p.data)} · por Nona · ${(p.views||0).toLocaleString('pt-BR')} leituras</div>
     <div class="reader-body">${p.conteudo.split('\n\n').map(par=>`<p>${par}</p>`).join('')}</div>
   `;
   ['inicio','livros','livro','sobre'].forEach(s=>document.getElementById('page-'+s).classList.add('hidden'));
   document.getElementById('page-post').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
+  p.views = (p.views||0)+1;
+  db.from('posts').update({views:p.views}).eq('id', id).then(({error})=>{ if(error) console.error(error); });
 }
 
 function renderUltimosPosts(){
@@ -946,9 +897,10 @@ function formatDate(d){
 /* =====================================================================
    NAVEGAÇÃO — SITE <-> DASHBOARD
 ===================================================================== */
-function enterDashboard(){
+async function enterDashboard(){
   document.getElementById('site-view').style.display='none';
   document.getElementById('dashboard-view').classList.add('active');
+  await loadAll();
   renderDashboard();
 }
 function exitDashboard(){
@@ -1163,26 +1115,36 @@ function editarPost(id){
   dashNavByTarget('d-editor');
 }
 
-function salvarPost(){
+async function salvarPost(){
   const data = readEditorPost();
   if(!data.titulo.trim()){ showToast('Dê um título ao seu texto antes de salvar.'); return; }
   const status = document.getElementById('f-status').value;
+  const row = {
+    titulo: data.titulo, livro_id: data.livroId, status,
+    resumo: data.resumo, conteudo: data.conteudo, tags: data.tags,
+    meta_titulo: data.metaTitulo, meta_desc: data.metaDesc, slug: data.slug, keyword: data.keyword
+  };
   if(editingId){
-    const p = posts.find(x=>x.id===editingId);
-    Object.assign(p, data, {status});
+    const {error} = await db.from('posts').update(row).eq('id', editingId);
+    if(error){ console.error(error); showToast('Erro ao salvar no Supabase: '+error.message); return; }
     showToast('Post atualizado com sucesso.');
   } else {
-    const newId = Math.max(0,...posts.map(p=>p.id))+1;
-    posts.push({id:newId, ...data, status, data:new Date().toISOString().slice(0,10), views:0});
-    editingId = newId;
+    row.data = new Date().toISOString().slice(0,10);
+    row.views = 0;
+    const {data:inserted, error} = await db.from('posts').insert(row).select().single();
+    if(error){ console.error(error); showToast('Erro ao criar no Supabase: '+error.message); return; }
+    editingId = inserted.id;
     showToast('Post criado com sucesso.');
   }
+  await loadPosts();
   renderDashboard();
   dashNavByTarget('d-posts');
 }
 
-function excluirPost(id){
-  posts = posts.filter(p=>p.id!==id);
+async function excluirPost(id){
+  const {error} = await db.from('posts').delete().eq('id', id);
+  if(error){ console.error(error); showToast('Erro ao excluir: '+error.message); return; }
+  await loadPosts();
   renderDashboard();
   showToast('Post excluído.');
 }
@@ -1239,8 +1201,20 @@ function renderComentarios(){
     </div>
   `).join('');
 }
-function aprovarComentario(id){ comentarios.find(c=>c.id===id).status='aprovado'; renderComentarios(); showToast('Comentário aprovado.'); }
-function excluirComentario(id){ comentarios = comentarios.filter(c=>c.id!==id); renderComentarios(); showToast('Comentário excluído.'); }
+async function aprovarComentario(id){
+  const {error} = await db.from('comentarios').update({status:'aprovado'}).eq('id', id);
+  if(error){ console.error(error); showToast('Erro ao aprovar: '+error.message); return; }
+  await loadComentarios();
+  renderComentarios();
+  showToast('Comentário aprovado.');
+}
+async function excluirComentario(id){
+  const {error} = await db.from('comentarios').delete().eq('id', id);
+  if(error){ console.error(error); showToast('Erro ao excluir: '+error.message); return; }
+  await loadComentarios();
+  renderComentarios();
+  showToast('Comentário excluído.');
+}
 
 function renderMedia(){
   const icons = ['&#9670;','&#9733;','&#128214;','&#128366;','&#9878;','&#128374;','&#9711;','&#9884;'];
@@ -1269,16 +1243,20 @@ function showToast(msg){
 /* =====================================================================
    INIT
 ===================================================================== */
-document.getElementById('posts-filter-livro');
-populateLivroSelects();
-renderUltimosPosts();
-renderLivrosGrid();
-limparEditor();
-
 const observer = new IntersectionObserver(entries=>{
   entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('reveal'); });
 },{threshold:0.15});
-document.querySelectorAll('.livro-card, .post-row').forEach(el=>observer.observe(el));
+
+async function init(){
+  document.getElementById('ultimos-posts').innerHTML = '<p style="color:var(--ink);">Carregando os escritos de Nona...</p>';
+  await loadAll();
+  populateLivroSelects();
+  renderUltimosPosts();
+  renderLivrosGrid();
+  limparEditor();
+  document.querySelectorAll('.livro-card, .post-row').forEach(el=>observer.observe(el));
+}
+init();
 </script>
 </body>
 </html>
