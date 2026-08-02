@@ -644,7 +644,16 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
             </div>
             <div class="field">
               <label>Conteúdo</label>
+              <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+                <button type="button" class="btn-secondary" style="padding:8px 14px; font-size:12px;" onclick="prepararUploadImagem()">+ Enviar imagem</button>
+                <button type="button" class="btn-secondary" style="padding:8px 14px; font-size:12px;" onclick="toggleGaleriaImagens()">Galeria de imagens</button>
+                <input type="file" id="post-imagem-file" accept="image/*" style="display:none" onchange="handlePostImagemUpload(event)">
+              </div>
+              <div id="galeria-imagens-panel" class="hidden panel" style="padding:16px; margin-bottom:14px; max-height:240px; overflow-y:auto;">
+                <div class="media-grid" id="galeria-imagens-grid"></div>
+              </div>
               <textarea id="f-conteudo" rows="14" placeholder="Escreva o texto completo aqui. Separe parágrafos com uma linha em branco." oninput="onEditorInput()"></textarea>
+              <div style="font-size:12px; color:var(--ink); margin-top:6px;">A imagem entra na posição do cursor. Clique numa imagem da galeria pra reaproveitar sem enviar de novo.</div>
             </div>
             <div class="field">
               <label>Tags (separadas por vírgula)</label>
@@ -907,6 +916,7 @@ let categorias = [];
 let posts = [];
 let comentarios = [];
 let simbolos = [];
+let postImagens = [];
 let editingId = null;
 let editingLivroId = null;
 let editingCategoriaId = null;
@@ -960,8 +970,14 @@ async function loadSimbolos(){
   simbolos = data || [];
 }
 
+async function loadPostImagens(){
+  const {data, error} = await db.from('post_imagens').select('*').order('created_at', {ascending:false});
+  if(error){ console.error(error); return; }
+  postImagens = data || [];
+}
+
 async function loadAll(){
-  await Promise.all([loadLivros(), loadCategorias(), loadPosts(), loadComentarios(), loadSimbolos()]);
+  await Promise.all([loadLivros(), loadCategorias(), loadPosts(), loadComentarios(), loadSimbolos(), loadPostImagens()]);
 }
 
 /* =====================================================================
@@ -1533,6 +1549,83 @@ function onEditorInput(){
   document.getElementById('seo-checklist').innerHTML = checks.map(([lvl,txt])=>`<div class="seo-check ${lvl}"><div class="dot"></div>${txt}</div>`).join('');
 }
 document.getElementById('f-slug').addEventListener('input', e=>{ e.target.dataset.touched='1'; });
+
+/* =====================================================================
+   IMAGENS NO EDITOR — upload, galeria reutilizável, inserção no cursor
+===================================================================== */
+let editorCursorPos = null;
+function updateEditorCursor(){
+  const ta = document.getElementById('f-conteudo');
+  if(ta) editorCursorPos = ta.selectionStart;
+}
+
+function insertImageAtCursor(url, alt){
+  const ta = document.getElementById('f-conteudo');
+  const pos = (editorCursorPos !== null) ? editorCursorPos : ta.value.length;
+  const before = ta.value.slice(0, pos);
+  const after = ta.value.slice(pos);
+  const breakBefore = (before.length && !before.endsWith('\n\n')) ? (before.endsWith('\n') ? '\n' : '\n\n') : '';
+  const breakAfter = (after.length && !after.startsWith('\n\n')) ? (after.startsWith('\n') ? '\n' : '\n\n') : '\n\n';
+  const snippet = `${breakBefore}<img src="${url}" alt="${(alt||'').replace(/"/g,'')}">${breakAfter}`;
+  ta.value = before + snippet + after;
+  editorCursorPos = before.length + snippet.length;
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = editorCursorPos;
+  onEditorInput();
+}
+
+function prepararUploadImagem(){
+  updateEditorCursor();
+  document.getElementById('post-imagem-file').click();
+}
+
+async function handlePostImagemUpload(evt){
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if(!file) return;
+  showToast('Enviando imagem...');
+  const safeName = file.name.replace(/[^a-zA-Z0-9.\-]/g,'_');
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}-${safeName}`;
+  const {error: upErr} = await db.storage.from('post-imagens').upload(path, file, {cacheControl:'3600', upsert:false});
+  if(upErr){ console.error(upErr); showToast('Erro ao enviar imagem: '+upErr.message); return; }
+  const {data:pub} = db.storage.from('post-imagens').getPublicUrl(path);
+  const alt = file.name.replace(/\.[^.]+$/,'');
+  const {error: insErr} = await db.from('post_imagens').insert({image_url: pub.publicUrl, path});
+  if(insErr){ console.error(insErr); showToast('Erro ao salvar referência da imagem: '+insErr.message); }
+  insertImageAtCursor(pub.publicUrl, alt);
+  await loadPostImagens();
+  renderGaleriaImagens();
+  showToast('Imagem inserida no texto.');
+}
+
+function toggleGaleriaImagens(){
+  updateEditorCursor();
+  const panel = document.getElementById('galeria-imagens-panel');
+  const opening = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  if(opening) renderGaleriaImagens();
+}
+
+function renderGaleriaImagens(){
+  const el = document.getElementById('galeria-imagens-grid');
+  if(!el) return;
+  el.innerHTML = postImagens.map(img=>`
+    <div class="media-item" style="background:var(--panel-2); cursor:pointer; padding:6px;" onclick="escolherImagemGaleria('${img.image_url}')" title="Inserir no texto">
+      <img src="${img.image_url}" alt="" style="max-width:100%; max-height:100%; object-fit:cover; border-radius:2px;">
+    </div>
+  `).join('') || `<p style="color:var(--ink); grid-column:1/-1; font-size:13px;">Nenhuma imagem enviada ainda. Use "+ Enviar imagem".</p>`;
+}
+
+function escolherImagemGaleria(url){
+  insertImageAtCursor(url, '');
+  document.getElementById('galeria-imagens-panel').classList.add('hidden');
+  showToast('Imagem inserida no texto.');
+}
+
+['keyup','click','select','input'].forEach(evt=>{
+  const ta = document.getElementById('f-conteudo');
+  if(ta) ta.addEventListener(evt, updateEditorCursor);
+});
 
 function limparEditor(){
   editingId = null;

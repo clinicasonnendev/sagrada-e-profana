@@ -38,8 +38,18 @@ Cada post pertence a um livro, tem status de `rascunho` ou `publicado`, e carreg
 ├── 404.html                 # página de erro
 ├── schema.sql                # schema Postgres/Supabase (livros, posts, comentários)
 ├── simbolos-schema.sql       # schema do bucket + tabela de símbolos decorativos
+├── post-imagens-schema.sql   # schema do bucket + tabela de imagens usadas dentro dos posts
 └── README.md
 ```
+
+## Imagens no editor de posts
+
+O editor de texto (painel → Posts → Novo/Editar Post) tem uma barra acima do campo "Conteúdo" com dois botões:
+
+- **+ Enviar imagem** — sobe um arquivo novo pro Storage e insere `<img>` na posição do cursor.
+- **Galeria de imagens** — mostra as imagens já enviadas antes (em qualquer post), pra reaproveitar sem subir de novo; clicar numa miniatura insere no cursor.
+
+As imagens ficam catalogadas na tabela `post_imagens`. Para habilitar, rode `post-imagens-schema.sql` no SQL Editor do Supabase.
 
 ## Decoração de fundo ("flash decor")
 
