@@ -183,6 +183,8 @@ img{max-width:100%; display:block;}
 .post-row.reveal{opacity:1; transform:translateY(0); transition:opacity .6s ease, transform .6s ease;}
 .post-row:hover .post-title{color:var(--gold-bright);}
 .post-cap{font-family:var(--font-display); font-size:52px; color:var(--gold-dim); line-height:1; text-align:center;}
+.post-thumb{width:90px; height:90px; border-radius:var(--radius); object-fit:cover; border:1px solid var(--purple-line);}
+.reader-cover{width:100%; max-height:420px; object-fit:cover; border-radius:var(--radius); margin:28px 0 8px; border:1px solid var(--purple-line);}
 .post-tag{font-family:var(--font-ui); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold);}
 .post-title{font-family:var(--font-heading); font-size:26px; color:var(--white); margin-top:8px; transition:color .25s;}
 .post-excerpt{color:var(--ink); font-size:17px; margin-top:10px; line-height:1.7;}
@@ -671,6 +673,12 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
               <label>Título</label>
               <input type="text" id="f-titulo" placeholder="Ex: A Segunda Lei do Coração" oninput="onEditorInput()">
             </div>
+            <div class="field">
+              <label>Imagem de capa</label>
+              <input type="file" id="f-capa-file" accept="image/*" onchange="onCapaImagemSelecionada(event)">
+              <div id="f-capa-preview" style="margin-top:10px;"></div>
+              <div style="font-size:12px; color:var(--ink); margin-top:6px;">Aparece nas listagens e no topo da leitura. Opcional.</div>
+            </div>
             <div class="field-row">
               <div class="field">
                 <label>Livro</label>
@@ -1003,7 +1011,7 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
    SUPABASE — conexão com o banco real
 ===================================================================== */
 const SUPABASE_URL = 'https://txpkvmxrgfywbmekdkhh.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_L9CIX6e_N12tXJptNzXXKA_6vUj7b2r';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4cGt2bXhyZ2Z5d2JtZWtka2hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDEyMjEsImV4cCI6MjEwMTE3NzIyMX0.WW4cE3EnKyR_BpeXHdrpyLMVX_tdb89ib4Up4NSIeOY';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 db.auth.onAuthStateChange((event)=>{
@@ -1027,6 +1035,7 @@ let editingLivroId = null;
 let editingCategoriaId = null;
 let editingProdutoId = null;
 let produtoImagemPendente = null;
+let capaImagemPendente = null;
 
 async function loadCategorias(){
   const {data, error} = await db.from('categorias').select('*').order('nome', {ascending:true});
@@ -1046,7 +1055,7 @@ async function loadPosts(){
   posts = (data||[]).map(p=>({
     id:p.id, titulo:p.titulo, livroId:p.livro_id, categoriaId:p.categoria_id, status:p.status, data:p.data,
     resumo:p.resumo, conteudo:p.conteudo, tags:p.tags||[], metaTitulo:p.meta_titulo,
-    metaDesc:p.meta_desc, slug:p.slug, keyword:p.keyword, views:p.views||0
+    metaDesc:p.meta_desc, slug:p.slug, keyword:p.keyword, views:p.views||0, imagemCapa:p.imagem_capa||null
   }));
 }
 
@@ -1528,6 +1537,12 @@ function renderLivrosGrid(){
   setTimeout(()=>document.querySelectorAll('.livro-card').forEach(c=>c.classList.add('reveal')), 30);
 }
 
+function postCapHtml(p, fallback){
+  return p.imagemCapa
+    ? `<img class="post-thumb" src="${p.imagemCapa}" alt="">`
+    : `<div class="post-cap">${fallback}</div>`;
+}
+
 function renderLivroPage(id){
   const l = livroById(id);
   const ps = postsDoLivro(id);
@@ -1538,7 +1553,7 @@ function renderLivroPage(id){
     <div class="posts-list" style="margin-top:44px;">
       ${ps.map((p,i)=>`
         <div class="post-row" onclick="navPost(${p.id})">
-          <div class="post-cap">${String(i+1).padStart(2,'0')}</div>
+          ${postCapHtml(p, String(i+1).padStart(2,'0'))}
           <div>
             <div class="post-tag">${l.nome}${categoriaBadge(p)}</div>
             <div class="post-title">${p.titulo}</div>
@@ -1568,6 +1583,7 @@ function renderPostPage(id){
     <div class="reader-tag">Livro ${l.numero} · ${l.nome}</div>
     <h1>${p.titulo}</h1>
     <div class="reader-meta">${formatDate(p.data)} · por Nona · ${(p.views||0).toLocaleString('pt-BR')} leituras</div>
+    ${p.imagemCapa ? `<img class="reader-cover" src="${p.imagemCapa}" alt="">` : ''}
     <div class="reader-body">${p.conteudo.split('\n\n').map(par=>`<p>${par}</p>`).join('')}</div>
   `;
   ['inicio','livros','livro','sobre','loja'].forEach(s=>document.getElementById('page-'+s).classList.add('hidden'));
@@ -1590,7 +1606,7 @@ function renderUltimosPosts(){
   el.innerHTML = ps.map((p,i)=>{
     const l = livroById(p.livroId);
     return `<div class="post-row" onclick="navPost(${p.id})">
-      <div class="post-cap">${l.numero}</div>
+      ${postCapHtml(p, l.numero)}
       <div>
         <div class="post-tag">${l.nome}${categoriaBadge(p)}</div>
         <div class="post-title">${p.titulo}</div>
@@ -1933,20 +1949,31 @@ function escolherImagemGaleria(url){
   if(ta) ta.addEventListener(evt, updateEditorCursor);
 });
 
+function onCapaImagemSelecionada(evt){
+  capaImagemPendente = evt.target.files[0] || null;
+  if(capaImagemPendente){
+    document.getElementById('f-capa-preview').innerHTML = `<span style="color:var(--ink); font-size:12px;">${capaImagemPendente.name} (será enviada ao salvar)</span>`;
+  }
+}
+
 function limparEditor(){
   editingId = null;
+  capaImagemPendente = null;
   document.getElementById('editor-title').textContent = 'Novo Post';
   ['f-titulo','f-resumo','f-conteudo','f-tags','f-keyword','f-meta-titulo','f-meta-desc','f-slug'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-slug').dataset.touched='';
   document.getElementById('f-status').value='rascunho';
   if(livros.length) document.getElementById('f-livro').value = livros[0].id;
   document.getElementById('f-categoria').value='';
+  document.getElementById('f-capa-preview').innerHTML='';
+  document.getElementById('f-capa-file').value='';
   onEditorInput();
 }
 
 function editarPost(id){
   const p = posts.find(x=>x.id===id);
   editingId = id;
+  capaImagemPendente = null;
   document.getElementById('editor-title').textContent = 'Editar Post';
   document.getElementById('f-titulo').value = p.titulo;
   document.getElementById('f-livro').value = p.livroId;
@@ -1960,6 +1987,8 @@ function editarPost(id){
   document.getElementById('f-meta-desc').value = p.metaDesc||'';
   document.getElementById('f-slug').value = p.slug||'';
   document.getElementById('f-slug').dataset.touched='1';
+  document.getElementById('f-capa-preview').innerHTML = p.imagemCapa ? `<img src="${p.imagemCapa}" style="max-width:160px; border-radius:4px; display:block;">` : '';
+  document.getElementById('f-capa-file').value='';
   onEditorInput();
   dashNavByTarget('d-editor');
 }
@@ -1968,10 +1997,22 @@ async function salvarPost(){
   const data = readEditorPost();
   if(!data.titulo.trim()){ showToast('Dê um título ao seu texto antes de salvar.'); return; }
   const status = document.getElementById('f-status').value;
+
+  let imagemCapa = editingId ? (posts.find(x=>x.id===editingId)?.imagemCapa || null) : null;
+  if(capaImagemPendente){
+    const safeName = capaImagemPendente.name.replace(/[^a-zA-Z0-9.\-]/g,'_');
+    const path = `capa-${Date.now()}-${Math.random().toString(36).slice(2,8)}-${safeName}`;
+    const {error: upErr} = await db.storage.from('post-imagens').upload(path, capaImagemPendente, {cacheControl:'3600', upsert:false});
+    if(upErr){ console.error(upErr); showToast('Erro ao enviar imagem de capa: '+upErr.message); return; }
+    const {data:pub} = db.storage.from('post-imagens').getPublicUrl(path);
+    imagemCapa = pub.publicUrl;
+  }
+
   const row = {
     titulo: data.titulo, livro_id: data.livroId, categoria_id: data.categoriaId, status,
     resumo: data.resumo, conteudo: data.conteudo, tags: data.tags,
-    meta_titulo: data.metaTitulo, meta_desc: data.metaDesc, slug: data.slug, keyword: data.keyword
+    meta_titulo: data.metaTitulo, meta_desc: data.metaDesc, slug: data.slug, keyword: data.keyword,
+    imagem_capa: imagemCapa
   };
   if(editingId){
     const {error} = await db.from('posts').update(row).eq('id', editingId);
@@ -1985,6 +2026,7 @@ async function salvarPost(){
     editingId = inserted.id;
     showToast('Post criado com sucesso.');
   }
+  capaImagemPendente = null;
   await loadPosts();
   renderDashboard();
   dashNavByTarget('d-posts');
