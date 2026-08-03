@@ -214,6 +214,35 @@ img{max-width:100%; display:block;}
 .about-text h3{font-family:var(--font-heading); font-size:30px; color:var(--white); margin-bottom:16px;}
 .about-text p{color:var(--ink); font-size:18px; line-height:1.8; margin-bottom:14px;}
 
+/* ============ LOJA ============ */
+.loja-tabs{display:flex; gap:12px; justify-content:center; margin-bottom:44px; flex-wrap:wrap;}
+.loja-tab.active{background:rgba(201,162,74,0.12); border-color:var(--gold);}
+.produtos-grid{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr));
+  gap:26px; max-width:1240px; margin:0 auto;
+}
+.produto-card{
+  background:linear-gradient(160deg, var(--panel-2), var(--panel));
+  border:1px solid var(--purple-line); border-radius:var(--radius);
+  overflow:hidden; display:flex; flex-direction:column;
+  opacity:0; transform:translateY(24px);
+}
+.produto-card.reveal{opacity:1; transform:translateY(0); transition:opacity .7s ease, transform .7s ease;}
+.produto-card:hover{border-color:var(--gold-dim);}
+.produto-img{
+  width:100%; aspect-ratio:1;
+  background:linear-gradient(150deg, var(--purple-deep), var(--panel-2));
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+.produto-img img{width:100%; height:100%; object-fit:cover;}
+.produto-body{padding:24px; display:flex; flex-direction:column; flex:1;}
+.produto-tipo{font-family:var(--font-ui); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold);}
+.produto-nome{font-family:var(--font-heading); font-size:21px; color:var(--white); margin-top:8px; font-weight:600;}
+.produto-desc{color:var(--ink); font-size:15px; margin-top:8px; line-height:1.65; flex:1;}
+.produto-preco{font-family:var(--font-heading); font-size:23px; color:var(--gold-bright); margin-top:18px;}
+.produto-estoque{font-family:var(--font-ui); font-size:12px; color:var(--ink); margin-top:4px;}
+.produto-buy{display:block; text-align:center; margin-top:16px; text-decoration:none;}
+
 /* ============ FOOTER ============ */
 footer{border-top:1px solid var(--purple-line); padding:50px 5vw; text-align:center;}
 footer .brand-text{justify-content:center; display:inline-flex;}
@@ -405,9 +434,12 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
     <div class="nav-links">
       <a href="#" onclick="navSection('inicio');return false;">Início</a>
       <a href="#" onclick="navSection('livros');return false;">Os Livros</a>
+      <a href="#" onclick="navSection('loja');return false;">Loja</a>
       <a href="#" onclick="navSection('sobre');return false;">Nona</a>
     </div>
-    <button class="btn-sanctum" onclick="enterDashboard()">Painel de Nona</button>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button class="btn-sanctum" onclick="enterDashboard()">Painel de Nona</button>
+    </div>
   </nav>
 
   <!-- ---------- INÍCIO ---------- -->
@@ -491,11 +523,29 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
     </section>
   </div>
 
+  <!-- ---------- LOJA ---------- -->
+  <div id="page-loja" class="hidden">
+    <section class="section" style="padding-top:8vh;">
+      <div class="section-head">
+        <div class="eyebrow">loja de nona</div>
+        <h2>Relíquias &amp; Textos</h2>
+        <p>Japamalás, guias e textos em PDF — peças físicas e virtuais dos rituais de Nona.</p>
+      </div>
+      <div class="loja-tabs">
+        <button class="btn-ghost loja-tab active" data-tipo="todos" onclick="filtrarLoja('todos', this)">Todos</button>
+        <button class="btn-ghost loja-tab" data-tipo="fisico" onclick="filtrarLoja('fisico', this)">Físicos</button>
+        <button class="btn-ghost loja-tab" data-tipo="digital" onclick="filtrarLoja('digital', this)">Digitais (PDF)</button>
+      </div>
+      <div class="produtos-grid" id="produtos-grid"></div>
+    </section>
+  </div>
+
   <footer>
     <div class="brand-text">Sagrada e Profana</div>
     <div class="footer-links">
       <a href="#" onclick="navSection('inicio');return false;">Início</a>
       <a href="#" onclick="navSection('livros');return false;">Livros</a>
+      <a href="#" onclick="navSection('loja');return false;">Loja</a>
       <a href="#" onclick="navSection('sobre');return false;">Nona</a>
       <a href="#" onclick="enterDashboard();return false;">Painel</a>
     </div>
@@ -524,6 +574,9 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
       <button data-target="d-categorias" onclick="dashNav(this)"><span class="ic">&#127991;</span> Categorias</button>
       <button data-target="d-midia" onclick="dashNav(this)"><span class="ic">&#9635;</span> Mídia</button>
       <button data-target="d-simbolos" onclick="dashNav(this)"><span class="ic">&#10022;</span> Símbolos</button>
+
+      <div class="dash-nav-label">Loja</div>
+      <button data-target="d-produtos" onclick="dashNav(this)"><span class="ic">&#128717;</span> Produtos</button>
 
       <div class="dash-nav-label">Engajamento</div>
       <button data-target="d-comentarios" onclick="dashNav(this)"><span class="ic">&#9993;</span> Comentários</button>
@@ -802,6 +855,56 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
       </div>
     </section>
 
+    <!-- PRODUTOS -->
+    <section class="dash-section" id="d-produtos">
+      <div class="dash-topbar">
+        <div><h1>Produtos</h1><div class="sub">Japamalás, guias e textos em PDF à venda na loja.</div></div>
+        <button class="btn-primary" onclick="novoProdutoForm()">+ Novo Produto</button>
+      </div>
+
+      <div class="panel hidden" id="produto-form-panel">
+        <h3 id="produto-form-title">Novo Produto</h3>
+        <div class="field-row">
+          <div class="field"><label>Nome</label><input type="text" id="pf-nome" placeholder="Ex: Japamalá de Sândalo, 108 contas"></div>
+          <div class="field"><label>Tipo</label>
+            <select id="pf-tipo" onchange="onProdutoTipoChange()">
+              <option value="fisico">Físico</option>
+              <option value="digital">Digital (PDF)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Preço (R$)</label><input type="number" step="0.01" min="0" id="pf-preco" placeholder="89.90"></div>
+          <div class="field" id="pf-estoque-wrap"><label>Estoque (deixe em branco se não controla)</label><input type="number" min="0" id="pf-estoque" placeholder="10"></div>
+        </div>
+        <div class="field"><label>Descrição</label><textarea id="pf-descricao" rows="3" placeholder="Uma frase sobre a peça ou o conteúdo do guia..."></textarea></div>
+        <div class="field">
+          <label>Imagem do produto</label>
+          <input type="file" id="pf-imagem-file" accept="image/*" onchange="onProdutoImagemSelecionada(event)">
+          <div id="pf-imagem-preview" style="margin-top:10px;"></div>
+        </div>
+        <div class="field">
+          <label>Link de pagamento (Stripe Payment Link deste produto)</label>
+          <input type="text" id="pf-link" placeholder="https://buy.stripe.com/...">
+        </div>
+        <div class="field" style="display:flex; align-items:center; gap:10px; flex-direction:row;">
+          <input type="checkbox" id="pf-ativo" style="width:auto;" checked>
+          <label style="margin:0;">Visível na loja</label>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <button class="btn-primary" onclick="salvarProduto()">Salvar Produto</button>
+          <button class="btn-secondary" onclick="fecharProdutoForm()">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="panel" style="padding:0; overflow-x:auto;">
+        <table>
+          <thead><tr><th>Produto</th><th>Tipo</th><th>Preço</th><th>Estoque</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="produtos-table"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- COMENTÁRIOS -->
     <section class="dash-section" id="d-comentarios">
       <div class="dash-topbar"><div><h1>Comentários</h1><div class="sub">Vozes que responderam aos seus textos.</div></div></div>
@@ -902,6 +1005,7 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
 const SUPABASE_URL = 'https://txpkvmxrgfywbmekdkhh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_L9CIX6e_N12tXJptNzXXKA_6vUj7b2r';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 db.auth.onAuthStateChange((event)=>{
   if(event==='SIGNED_OUT' && document.getElementById('dashboard-view').classList.contains('active')){
     exitDashboard();
@@ -917,9 +1021,12 @@ let posts = [];
 let comentarios = [];
 let simbolos = [];
 let postImagens = [];
+let produtos = [];
 let editingId = null;
 let editingLivroId = null;
 let editingCategoriaId = null;
+let editingProdutoId = null;
+let produtoImagemPendente = null;
 
 async function loadCategorias(){
   const {data, error} = await db.from('categorias').select('*').order('nome', {ascending:true});
@@ -976,8 +1083,14 @@ async function loadPostImagens(){
   postImagens = data || [];
 }
 
+async function loadProdutos(){
+  const {data, error} = await db.from('produtos').select('*').order('ordem', {ascending:true});
+  if(error){ console.error(error); showToast('Erro ao carregar produtos do Supabase.'); return; }
+  produtos = data || [];
+}
+
 async function loadAll(){
-  await Promise.all([loadLivros(), loadCategorias(), loadPosts(), loadComentarios(), loadSimbolos(), loadPostImagens()]);
+  await Promise.all([loadLivros(), loadCategorias(), loadPosts(), loadComentarios(), loadSimbolos(), loadPostImagens(), loadProdutos()]);
 }
 
 /* =====================================================================
@@ -1181,19 +1294,158 @@ function renderCategoriasTable(){
 }
 
 /* =====================================================================
+   CRUD — PRODUTOS (loja)
+===================================================================== */
+function onProdutoTipoChange(){
+  const isDigital = document.getElementById('pf-tipo').value === 'digital';
+  document.getElementById('pf-estoque-wrap').style.display = isDigital ? 'none' : '';
+  if(isDigital) document.getElementById('pf-estoque').value = '';
+}
+
+function onProdutoImagemSelecionada(evt){
+  produtoImagemPendente = evt.target.files[0] || null;
+  if(produtoImagemPendente){
+    document.getElementById('pf-imagem-preview').innerHTML = `<span style="color:var(--ink); font-size:12px;">${produtoImagemPendente.name} (será enviada ao salvar)</span>`;
+  }
+}
+
+function novoProdutoForm(){
+  editingProdutoId = null;
+  produtoImagemPendente = null;
+  document.getElementById('produto-form-title').textContent = 'Novo Produto';
+  document.getElementById('pf-nome').value = '';
+  document.getElementById('pf-tipo').value = 'fisico';
+  document.getElementById('pf-preco').value = '';
+  document.getElementById('pf-estoque').value = '';
+  document.getElementById('pf-descricao').value = '';
+  document.getElementById('pf-link').value = '';
+  document.getElementById('pf-ativo').checked = true;
+  document.getElementById('pf-imagem-preview').innerHTML = '';
+  document.getElementById('pf-imagem-file').value = '';
+  onProdutoTipoChange();
+  document.getElementById('produto-form-panel').classList.remove('hidden');
+  document.getElementById('produto-form-panel').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function editarProduto(id){
+  const p = produtos.find(x=>x.id===id);
+  if(!p) return;
+  editingProdutoId = id;
+  produtoImagemPendente = null;
+  document.getElementById('produto-form-title').textContent = 'Editar Produto';
+  document.getElementById('pf-nome').value = p.nome;
+  document.getElementById('pf-tipo').value = p.tipo;
+  document.getElementById('pf-preco').value = p.preco;
+  document.getElementById('pf-estoque').value = (p.estoque===null || p.estoque===undefined) ? '' : p.estoque;
+  document.getElementById('pf-descricao').value = p.descricao || '';
+  document.getElementById('pf-link').value = p.link_pagamento || '';
+  document.getElementById('pf-ativo').checked = !!p.ativo;
+  document.getElementById('pf-imagem-preview').innerHTML = p.imagem_url ? `<img src="${p.imagem_url}" style="max-width:130px; border-radius:4px; display:block;">` : '';
+  document.getElementById('pf-imagem-file').value = '';
+  onProdutoTipoChange();
+  document.getElementById('produto-form-panel').classList.remove('hidden');
+  document.getElementById('produto-form-panel').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function fecharProdutoForm(){
+  document.getElementById('produto-form-panel').classList.add('hidden');
+  editingProdutoId = null;
+  produtoImagemPendente = null;
+}
+
+async function salvarProduto(){
+  const nome = document.getElementById('pf-nome').value.trim();
+  const preco = parseFloat(document.getElementById('pf-preco').value);
+  if(!nome){ showToast('Dê um nome ao produto.'); return; }
+  if(isNaN(preco) || preco < 0){ showToast('Informe um preço válido.'); return; }
+
+  let imagem_url = null, imagem_path = null;
+  if(editingProdutoId){
+    const atual = produtos.find(x=>x.id===editingProdutoId);
+    imagem_url = atual?.imagem_url || null;
+    imagem_path = atual?.imagem_path || null;
+  }
+  if(produtoImagemPendente){
+    const safeName = produtoImagemPendente.name.replace(/[^a-zA-Z0-9.\-]/g,'_');
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}-${safeName}`;
+    const {error: upErr} = await db.storage.from('produtos').upload(path, produtoImagemPendente, {cacheControl:'3600', upsert:false});
+    if(upErr){ console.error(upErr); showToast('Erro ao enviar imagem: '+upErr.message); return; }
+    const {data:pub} = db.storage.from('produtos').getPublicUrl(path);
+    imagem_url = pub.publicUrl;
+    imagem_path = path;
+  }
+
+  const tipo = document.getElementById('pf-tipo').value;
+  const estoqueRaw = document.getElementById('pf-estoque').value;
+  const row = {
+    nome, tipo, preco,
+    estoque: (tipo==='digital' || estoqueRaw === '') ? null : parseInt(estoqueRaw),
+    descricao: document.getElementById('pf-descricao').value.trim(),
+    link_pagamento: document.getElementById('pf-link').value.trim(),
+    ativo: document.getElementById('pf-ativo').checked,
+    imagem_url, imagem_path
+  };
+
+  let error;
+  if(editingProdutoId){
+    ({error} = await db.from('produtos').update(row).eq('id', editingProdutoId));
+  } else {
+    row.ordem = produtos.length;
+    ({error} = await db.from('produtos').insert(row));
+  }
+  if(error){ console.error(error); showToast('Erro ao salvar produto: '+error.message); return; }
+  showToast(editingProdutoId ? 'Produto atualizado.' : 'Produto criado.');
+  fecharProdutoForm();
+  await loadProdutos();
+  renderProdutosTable();
+}
+
+async function excluirProduto(id, path){
+  if(!confirm('Excluir este produto permanentemente?')) return;
+  if(path){
+    const {error: delErr} = await db.storage.from('produtos').remove([path]);
+    if(delErr) console.error(delErr);
+  }
+  const {error} = await db.from('produtos').delete().eq('id', id);
+  if(error){ console.error(error); showToast('Erro ao excluir: '+error.message); return; }
+  await loadProdutos();
+  renderProdutosTable();
+  showToast('Produto excluído.');
+}
+
+function renderProdutosTable(){
+  const el = document.getElementById('produtos-table');
+  if(!el) return;
+  el.innerHTML = produtos.map(p=>`
+    <tr>
+      <td>${p.nome}</td>
+      <td>${p.tipo==='digital' ? 'Digital (PDF)' : 'Físico'}</td>
+      <td>${formatPreco(p.preco)}</td>
+      <td>${p.tipo==='fisico' ? (p.estoque===null || p.estoque===undefined ? '—' : p.estoque) : '—'}</td>
+      <td>${p.ativo ? '<span class="badge publicado">visível</span>' : '<span class="badge rascunho">oculto</span>'}</td>
+      <td><div class="row-actions">
+        <button onclick="editarProduto(${p.id})">Editar</button>
+        <button class="danger" onclick="excluirProduto(${p.id}, '${p.imagem_path||''}')">Excluir</button>
+      </div></td>
+    </tr>
+  `).join('') || `<tr><td colspan="6" style="color:var(--ink); text-align:center; padding:24px;">Nenhum produto ainda. Crie o primeiro.</td></tr>`;
+}
+
+/* =====================================================================
    NAVEGAÇÃO — SITE (com URLs limpas via History API)
 ===================================================================== */
 function renderSection(name){
-  ['inicio','livros','livro','post','sobre'].forEach(s=>{
+  ['inicio','livros','livro','post','sobre','loja'].forEach(s=>{
     document.getElementById('page-'+s).classList.toggle('hidden', s!==name);
   });
   window.scrollTo({top:0, behavior:'smooth'});
   if(name==='inicio') renderUltimosPosts();
   if(name==='livros') renderLivrosGrid();
+  if(name==='loja') renderLojaGrid('todos');
   runFlashDecor();
 }
 function navSection(name){
-  const paths = {inicio:'/', livros:'/livros', sobre:'/sobre'};
+  const paths = {inicio:'/', livros:'/livros', sobre:'/sobre', loja:'/loja'};
   setPath(paths[name] || '/');
   renderSection(name);
 }
@@ -1208,6 +1460,51 @@ function categoriaBadge(p){
   return c ? `<span style="color:${c.cor}; margin-left:8px;">· ${c.nome}</span>` : '';
 }
 function postsDoLivro(id){ return posts.filter(p=>p.livroId===id && p.status==='publicado'); }
+
+/* =====================================================================
+   LOJA — vitrine pública de produtos
+===================================================================== */
+function formatPreco(v){ return 'R$ ' + Number(v||0).toFixed(2).replace('.',','); }
+
+function renderLojaGrid(tipo){
+  const grid = document.getElementById('produtos-grid');
+  if(!grid) return;
+  tipo = tipo || document.querySelector('.loja-tab.active')?.dataset.tipo || 'todos';
+  let list = produtos.filter(p=>p.ativo);
+  if(tipo !== 'todos') list = list.filter(p=>p.tipo===tipo);
+
+  grid.innerHTML = list.map(p=>{
+    const semEstoque = p.tipo==='fisico' && p.estoque !== null && p.estoque <= 0;
+    let botao;
+    if(semEstoque){
+      botao = `<button class="btn-ghost produto-buy" disabled>Esgotado</button>`;
+    } else if(p.link_pagamento){
+      botao = `<a href="${p.link_pagamento}" target="_blank" rel="noopener" class="btn-sanctum produto-buy">Comprar</a>`;
+    } else {
+      botao = `<button class="btn-ghost produto-buy" disabled>Em breve</button>`;
+    }
+    return `<div class="produto-card">
+      <div class="produto-img">${p.imagem_url ? `<img src="${p.imagem_url}" alt="${p.nome}">` : ''}</div>
+      <div class="produto-body">
+        <div class="produto-tipo">${p.tipo==='digital' ? 'PDF · digital' : 'peça física'}</div>
+        <div class="produto-nome">${p.nome}</div>
+        <div class="produto-desc">${p.descricao||''}</div>
+        <div class="produto-preco">${formatPreco(p.preco)}</div>
+        ${p.tipo==='fisico' && p.estoque !== null ? `<div class="produto-estoque">${semEstoque ? 'Esgotado' : p.estoque+' em estoque'}</div>` : ''}
+        ${botao}
+      </div>
+    </div>`;
+  }).join('') || `<p style="color:var(--ink); text-align:center; grid-column:1/-1; padding:20px 0;">Nenhum produto disponível ainda.</p>`;
+
+  setTimeout(()=>document.querySelectorAll('.produto-card').forEach(c=>c.classList.add('reveal')), 30);
+  runFlashDecor();
+}
+
+function filtrarLoja(tipo, btn){
+  document.querySelectorAll('.loja-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLojaGrid(tipo);
+}
 
 function renderLivrosGrid(){
   const grid = document.getElementById('livros-grid');
@@ -1273,7 +1570,7 @@ function renderPostPage(id){
     <div class="reader-meta">${formatDate(p.data)} · por Nona · ${(p.views||0).toLocaleString('pt-BR')} leituras</div>
     <div class="reader-body">${p.conteudo.split('\n\n').map(par=>`<p>${par}</p>`).join('')}</div>
   `;
-  ['inicio','livros','livro','sobre'].forEach(s=>document.getElementById('page-'+s).classList.add('hidden'));
+  ['inicio','livros','livro','sobre','loja'].forEach(s=>document.getElementById('page-'+s).classList.add('hidden'));
   document.getElementById('page-post').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
   runFlashDecor();
@@ -1328,6 +1625,14 @@ async function enterDashboard(){
 }
 
 async function showDashboardUI(){
+  const {data:{session}} = await db.auth.getSession();
+  const {data: adminRow} = await db.from('admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
+  if(!adminRow){
+    document.getElementById('login-error').textContent = 'Esse painel é reservado para Nona. Sua conta não tem acesso.';
+    document.getElementById('login-view').classList.add('active');
+    document.getElementById('dashboard-view').classList.remove('active');
+    return;
+  }
   document.getElementById('login-view').classList.remove('active');
   document.getElementById('dashboard-view').classList.add('active');
   await loadAll();
@@ -1390,6 +1695,7 @@ function renderDashboard(){
   renderMedia();
   renderStats();
   renderSimbolosGrid();
+  renderProdutosTable();
 }
 
 function renderOverview(){
@@ -1931,6 +2237,7 @@ function applyRoute(path){
 
   if(path === '/'){ renderSection('inicio'); return; }
   if(path === '/livros'){ renderSection('livros'); return; }
+  if(path === '/loja'){ renderSection('loja'); return; }
   if(path === '/sobre'){ renderSection('sobre'); return; }
   if(path === '/admin'){ enterDashboard(); return; }
 

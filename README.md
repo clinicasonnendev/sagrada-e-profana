@@ -27,7 +27,7 @@ Os textos são organizados em **seis livros**, que espelham (e subvertem) o cân
 | V | Deuteronômio | *"A lei que escrevo é só para quem ficar depois de mim."* |
 | VI | Apocalipse | *"O véu ainda não se rasgou. Em breve."* — **selado**, ainda não publicado |
 
-Cada post pertence a um livro, tem status de `rascunho` ou `publicado`, e carrega metadados de SEO (`meta_titulo`, `meta_desc`, `slug`, `keyword`) além de tags temáticas.
+Cada post pertence a um livro, tem status de `rascunho` ou `publicado`, e carrega metadados de SEO (`meta_titulo`, `meta_desc`, `slug`, `keyword`) além de tags temáticas. O conteúdo dos posts é **totalmente aberto** — sem login nem paywall pra leitura.
 
 ## Estrutura do repositório
 
@@ -39,8 +39,23 @@ Cada post pertence a um livro, tem status de `rascunho` ou `publicado`, e carreg
 ├── schema.sql                # schema Postgres/Supabase (livros, posts, comentários)
 ├── simbolos-schema.sql       # schema do bucket + tabela de símbolos decorativos
 ├── post-imagens-schema.sql   # schema do bucket + tabela de imagens usadas dentro dos posts
+├── produtos-schema.sql       # schema do bucket + tabela de produtos da loja
 └── README.md
 ```
+
+## Loja virtual
+
+Vitrine em `/loja`, com abas "Todos / Físicos / Digitais". Vende dois tipos de produto:
+
+- **Físicos** — japamalás, guias impressos, etc. Têm controle opcional de estoque (deixe em branco pra não controlar).
+- **Digitais** — textos em PDF. Sem controle de estoque.
+
+Cada produto tem seu próprio **Stripe Payment Link** (criado no Dashboard do Stripe, sem precisar de código), colado no campo "Link de pagamento" ao cadastrar o produto no painel (aba "Produtos"). O botão "Comprar" da loja leva direto pro checkout hospedado do Stripe.
+
+- Produtos físicos: habilite "Collect customer addresses" no Payment Link, pra receber o endereço de entrega.
+- Produtos digitais (PDF): use a entrega nativa de "digital product" do Stripe (anexa o arquivo ao próprio Payment Link) — o Stripe libera o download automaticamente após o pagamento, sem precisar de backend nosso. Isso evita o problema de "confirmação só no navegador" que apareceria numa integração caseira.
+
+Pra habilitar, rode `produtos-schema.sql` no SQL Editor do Supabase (cria o bucket `produtos` e a tabela).
 
 ## Imagens no editor de posts
 
