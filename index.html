@@ -2269,12 +2269,22 @@ function runFlashDecor(){
 /* =====================================================================
    ROTEADOR — URLs limpas via History API (sem .html, sem #)
 ===================================================================== */
+// O site vive dentro de uma subpasta do GitHub Pages
+// (clinicasonnendev.github.io/sagrada-e-profana/), não na raiz do
+// domínio — por isso todo caminho precisa desse prefixo. Se um dia
+// o site passar a usar um domínio próprio (ex: sagradaeprofana.com.br),
+// troque isso para uma string vazia ''.
+const BASE_PATH = '/sagrada-e-profana';
+
 function setPath(path){
-  if(location.pathname !== path) history.pushState({}, '', path);
+  const full = BASE_PATH + path;
+  if(location.pathname !== full) history.pushState({}, '', full);
 }
 
-function applyRoute(path){
-  path = (path || '/').replace(/\/+$/,'') || '/';
+function applyRoute(rawPath){
+  let path = rawPath || '/';
+  if(path.startsWith(BASE_PATH)) path = path.slice(BASE_PATH.length) || '/';
+  path = path.replace(/\/+$/,'') || '/';
   const parts = path.split('/').filter(Boolean);
 
   if(path === '/'){ renderSection('inicio'); return; }
@@ -2292,7 +2302,7 @@ function applyRoute(path){
     if(p){ renderSection('post'); renderPostPage(p.id); return; }
   }
   // rota desconhecida: volta para o início, sem quebrar a página
-  history.replaceState({}, '', '/');
+  history.replaceState({}, '', BASE_PATH + '/');
   renderSection('inicio');
 }
 
