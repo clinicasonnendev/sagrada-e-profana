@@ -1,30 +1,33 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Sagrada e Profana</title>
-<script>
-  // ============================================================
-  // Truque padrão para URLs limpas no GitHub Pages (spa-github-pages).
-  //
-  // Este repositório é publicado como Project Page em:
-  //   https://clinicasonnendev.github.io/sagrada-e-profana/
-  // por isso pathSegmentsToKeep fica em 1 (mantém o "/sagrada-e-profana"
-  // do início da URL). Só mude se o endereço do site mudar de formato.
-  // ============================================================
-  var pathSegmentsToKeep = 1;
+  <meta charset="utf-8">
+  <title>Sagrada e Profana</title>
+  <script type="text/javascript">
+    // Single Page Apps for GitHub Pages — https://github.com/rafgraph/spa-github-pages
+    //
+    // O GitHub Pages não sabe o que fazer com rotas como /post/algum-texto
+    // ou /livro/genesis (ele procura um arquivo real nesse caminho e,
+    // não achando, cai aqui). Este script pega a URL que a pessoa queria
+    // acessar e redireciona pro index.html com essa informação guardada
+    // na query string. O script no topo do index.html lê essa informação
+    // e restaura a URL certa, sem a pessoa perceber o pulo.
+    //
+    // pathSegmentsToKeep = 1 porque o site vive dentro de uma subpasta
+    // (clinicasonnendev.github.io/sagrada-e-profana/), não num domínio
+    // próprio — esse valor precisa preservar o "/sagrada-e-profana".
+    var pathSegmentsToKeep = 1;
 
-  var l = window.location;
-  l.replace(
-    l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-    l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-    l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-    (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-    l.hash
-  );
-</script>
+    var l = window.location;
+    l.replace(
+      l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+      l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+      l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+      l.hash
+    );
+  </script>
 </head>
 <body>
-  Redirecionando…
 </body>
 </html>
