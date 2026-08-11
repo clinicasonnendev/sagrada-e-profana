@@ -147,10 +147,11 @@ img{max-width:100%; display:block;}
 
 /* ============ LIVROS GRID ============ */
 .livros-grid{
-  display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr));
-  gap:26px; max-width:1240px; margin:0 auto;
+  display:flex; flex-direction:row; flex-wrap:nowrap; overflow-x:auto;
+  gap:26px; max-width:1240px; margin:0 auto; padding-bottom:14px;
 }
 .livro-card{
+  flex:0 0 300px;
   background:linear-gradient(160deg, var(--panel-2), var(--panel));
   border:1px solid var(--purple-line);
   padding:34px 28px; border-radius:var(--radius); position:relative; overflow:hidden;
@@ -400,7 +401,7 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
         <path d="M20 2 L20 38 M2 20 L38 20" stroke="#c9a24a" stroke-width="0.6"/>
         <path d="M20 9 L27 20 L20 31 L13 20 Z" stroke="#e8c76a" stroke-width="1"/>
       </svg>
-      <div class="brand-text">Sagrada e Profana<small>ensaios</small></div>
+      <div class="brand-text">Sagrada e Profana<small>Ensaios de Nona</small></div>
     </div>
     <div class="nav-links">
       <a href="#" onclick="navSection('inicio');return false;">Início</a>
@@ -413,7 +414,7 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
   <!-- ---------- INÍCIO ---------- -->
   <div id="page-inicio">
     <header class="hero">
-      <div class="hero-eyebrow">um blog de confissões e versos</div>
+      <div class="hero-eyebrow"></div>
       <h1>Sagrada <span>&amp;</span> Profana</h1>
       <p class="hero-sub">"Entre o incenso e a cinza, escrevo o que a carne reza e a alma peca."</p>
       <svg class="hero-divider sigil" width="90" height="40" viewBox="0 0 90 40">
@@ -422,7 +423,6 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
         <circle cx="45" cy="20" r="3" fill="#c9a24a"/>
         <line x1="60" y1="20" x2="90" y2="20" stroke="#c9a24a" stroke-width="1"/>
       </svg>
-      <p class="hero-desc">Nona escreve como quem reza de joelhos sujos. Este é o seu Pentateuco — cinco livros de textos autorais sobre desejo, fé, culpa e o que fica entre os dois altares. Um sexto livro, o Apocalipse, ainda dorme selado.</p>
       <div class="hero-cta">
         <button class="btn-sanctum" onclick="navSection('livros')">Entrar nos Livros</button>
         <button class="btn-ghost" onclick="navSection('sobre')">Quem é Nona</button>
@@ -430,11 +430,6 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
     </header>
 
     <section class="section">
-      <div class="section-head">
-        <div class="eyebrow">últimos escritos</div>
-        <h2>Recém-revelados</h2>
-        <p>Os textos mais recentes de todos os livros, em ordem de aparição.</p>
-      </div>
       <div class="posts-list" id="ultimos-posts"></div>
     </section>
   </div>
@@ -442,11 +437,6 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
   <!-- ---------- LIVROS ---------- -->
   <div id="page-livros" class="hidden">
     <section class="section" style="padding-top:8vh;">
-      <div class="section-head">
-        <div class="eyebrow">o cânone de nona</div>
-        <h2>O Pentateuco &amp; o Apocalipse</h2>
-        <p>Seis livros. Cinco já escritos na carne, o sexto ainda selado com cera e silêncio.</p>
-      </div>
       <div class="livros-grid" id="livros-grid"></div>
     </section>
   </div>
