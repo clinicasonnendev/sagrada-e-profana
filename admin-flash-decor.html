@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin · Flash Decor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- ============================================================
+     CONFIG — troque estes 4 valores pelos do SEU projeto Supabase.
+     supabaseUrl/supabaseKey: Project Settings → API, no seu Supabase.
+     table/bucket: só mude se você alterou os nomes no setup.sql.
+     ============================================================ -->
+<script>
+  window.FLASH_DECOR_CONFIG = {
+    supabaseUrl: 'https://txpkvmxrgfywbmekdkhh.supabase.co',
+    supabaseKey: 'sb_publishable_L9CIX6e_N12tXJptNzXXKA_6vUj7b2r',
+    table: 'flash_decor_images',
+    bucket: 'flash-decor',
+  };
+</script>
+
+<style>
+  :root{
+    --bg:#0d0d10; --bg-panel:#17171b; --bg-panel-2:#1f1f24;
+    --line:#2a2a30; --line-bright:#3a3a42;
+    --ink:#eee; --ink-dim:#a8a8b0; --ink-faint:#6d6d76;
+    --accent:#5b6ee8; --accent-bright:#7c8cf0;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    min-height:100vh;
+  }
+  h1,h2{ font-weight:600; }
+  button{ font-family:inherit; cursor:pointer; }
+  .btn{
+    background:var(--bg-panel-2); border:1px solid var(--line-bright); color:var(--ink);
+    padding:10px 16px; font-size:0.85rem; border-radius:6px;
+  }
+  .btn:hover{ border-color:var(--accent); }
+  .btn-solid{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn-solid:hover{ background:var(--accent-bright); border-color:var(--accent-bright); }
+  .btn-block{ width:100%; }
+  input[type=text], input[type=file]{
+    width:100%; background:var(--bg-panel-2); border:1px solid var(--line-bright); color:var(--ink);
+    padding:10px 12px; border-radius:6px; font-size:0.9rem; font-family:inherit;
+  }
+  label{ display:block; font-size:0.75rem; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.04em; margin:14px 0 6px; }
+  label:first-of-type{ margin-top:0; }
+
+  /* ---- login ---- */
+  #loginScreen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
+  .login-card{ background:var(--bg-panel); border:1px solid var(--line); padding:44px 36px; width:100%; max-width:380px; text-align:center; border-radius:10px; }
+  .login-title{ font-size:1.1rem; margin:0 0 4px; }
+  .login-sub{ font-size:0.75rem; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:26px; }
+  .login-err{ color:#e0847a; font-size:0.82rem; margin-top:12px; min-height:1.2em; }
+
+  /* ---- painel ---- */
+  #adminPanel{ display:none; max-width:1000px; margin:0 auto; padding:50px 24px 70px; }
+  .admin-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:30px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+  .admin-head h1{ font-size:1.25rem; margin:0; }
+
+  .stats-bar{ display:flex; gap:14px; margin-bottom:26px; }
+  .stat{ background:var(--bg-panel); border:1px solid var(--line); padding:14px 24px; border-radius:8px; text-align:center; }
+  .stat .n{ font-size:1.5rem; color:var(--accent-bright); font-weight:600; }
+  .stat .l{ font-size:0.68rem; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.06em; }
+
+  .section{ background:var(--bg-panel); border:1px solid var(--line); padding:24px; margin-bottom:22px; border-radius:10px; }
+  .section h2{ font-size:0.95rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--accent-bright); margin:0 0 16px; }
+
+  .preview-box{ border:1px dashed var(--line-bright); min-height:110px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; border-radius:6px; margin-bottom:14px; }
+  .preview-box img{ max-width:100%; max-height:200px; object-fit:contain; display:none; }
+  .preview-placeholder{ color:#999; font-size:0.85rem; }
+
+  .progress{ display:none; margin-top:12px; }
+  .progress.visible{ display:block; }
+  .progress-bar{ height:4px; background:var(--line); border-radius:2px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--accent); width:0%; transition:width .25s; }
+  .progress-text{ font-size:0.72rem; color:var(--ink-faint); margin-top:6px; }
+
+  .alert{ padding:12px 16px; font-size:0.85rem; display:none; margin-top:14px; border:1px solid; border-radius:6px; }
+  .alert.visible{ display:block; }
+  .alert.success{ background:rgba(74,222,128,.08); border-color:rgba(74,222,128,.3); color:#7fd99a; }
+  .alert.error{ background:rgba(193,74,60,.1); border-color:rgba(193,74,60,.35); color:#e0847a; }
+
+  .gallery-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px; margin-top:14px; }
+  .g-item{ background:var(--bg-panel-2); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .g-item img{ width:100%; aspect-ratio:1; object-fit:contain; display:block; background:#fff; }
+  .g-info{ padding:10px; }
+  .g-title{ font-size:0.82rem; margin-bottom:8px; word-break:break-word; }
+  .g-actions{ display:flex; gap:6px; }
+  .g-actions button{ flex:1; font-size:0.68rem; padding:6px 8px; }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-title">Flash Decor</div>
+    <div class="login-sub">Admin de imagens</div>
+    <button id="loginBtn" class="btn btn-solid btn-block">Entrar com Google</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ===================== PAINEL ===================== -->
+<div id="adminPanel">
+  <div class="admin-head">
+    <h1>Admin · Flash Decor</h1>
+    <button class="btn" onclick="logout()">Sair</button>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="n" id="totalImages">0</div><div class="l">imagens</div></div>
+  </div>
+
+  <!-- Upload em lote -->
+  <div class="section">
+    <h2>Upload em lote</h2>
+    <label>Selecionar imagens (.webp, .png, .svg)</label>
+    <input type="file" id="bulkFiles" accept=".webp,.png,.svg" multiple>
+    <div class="progress" id="bulkProgress">
+      <div class="progress-bar"><div class="progress-fill" id="bulkProgressFill"></div></div>
+      <div class="progress-text" id="bulkProgressText">Enviando...</div>
+    </div>
+    <button class="btn btn-solid" id="btnBulk" style="margin-top:14px;">Enviar todos</button>
+    <div class="alert" id="bulkAlert"></div>
+    <p style="font-size:0.72rem; color:var(--ink-faint); margin-top:12px;">Título gerado a partir do nome do arquivo. Todos entram marcados "na decoração" — desmarque depois na lista abaixo se algum não deve aparecer.</p>
+  </div>
+
+  <!-- Upload individual -->
+  <div class="section">
+    <h2>Upload individual</h2>
+    <div class="preview-box"><img id="previewImage"><span class="preview-placeholder" id="previewPlaceholder">Selecione uma imagem</span></div>
+    <input type="file" id="imageFile" accept=".webp,.png,.svg">
+    <label>Título (opcional)</label>
+    <input type="text" id="imageTitle" placeholder="Gerado a partir do arquivo se ficar vazio">
+    <div style="display:flex; align-items:center; gap:8px; margin-top:14px;">
+      <input type="checkbox" id="imageDecor" checked style="width:auto;">
+      <label style="margin:0; text-transform:none; font-size:0.85rem;" for="imageDecor">Aparece na decoração do site</label>
+    </div>
+    <div class="progress" id="uploadProgress">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <button class="btn btn-solid" id="btnAdd" style="margin-top:14px;">Publicar</button>
+    <div class="alert" id="mainAlert"></div>
+  </div>
+
+  <!-- Galeria -->
+  <div class="section">
+    <h2>Todas as imagens</h2>
+    <div class="gallery-grid" id="galleryList"></div>
+  </div>
+</div>
+
+<script>
+  const CFG = window.FLASH_DECOR_CONFIG;
+  const { createClient } = supabase;
+  const sb = createClient(CFG.supabaseUrl, CFG.supabaseKey);
+  const TABLE = CFG.table;
+  const BUCKET = CFG.bucket;
+
+  let gallery = [];
+
+  function showAlert(id, type, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = `alert ${type} visible`;
+    setTimeout(() => el.className = 'alert', 5000);
+  }
+
+  function titleFromFilename(filename) {
+    const stem = filename.replace(/\.[^/.]+$/, '');
+    const spaced = stem.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ');
+    return spaced.split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  }
+
+  async function uploadFile(file) {
+    const slug = file.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+    const path = `${Date.now()}-${slug}`;
+    const { error } = await sb.storage.from(BUCKET).upload(path, file, { upsert: false });
+    if (error) throw error;
+    const { data } = sb.storage.from(BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  async function loadGallery() {
+    const { data, error } = await sb.from(TABLE).select('*').order('created_at', { ascending: false });
+    if (error) { console.warn('Tabela ainda não existe ou sem acesso:', error.message); gallery = []; return; }
+    gallery = data || [];
+  }
+
+  function renderGallery() {
+    const el = document.getElementById('galleryList');
+    el.innerHTML = '';
+    gallery.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'g-item';
+      div.innerHTML = `
+        <img src="${item.image_url}" alt="">
+        <div class="g-info">
+          <div class="g-title">${item.titulo || '(sem título)'}</div>
+          <div class="g-actions">
+            <button class="btn" data-toggle="${item.id}">${item.decor ? 'Tirar da decor.' : 'Pôr na decor.'}</button>
+            <button class="btn" data-del="${item.id}">Excluir</button>
+          </div>
+        </div>`;
+      el.appendChild(div);
+    });
+    el.querySelectorAll('[data-toggle]').forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.dataset.toggle;
+        const item = gallery.find(g => g.id == id);
+        await sb.from(TABLE).update({ decor: !item.decor }).eq('id', id);
+        await loadGallery(); renderGallery(); updateStats();
+      };
+    });
+    el.querySelectorAll('[data-del]').forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm('Excluir esta imagem permanentemente?')) return;
+        await sb.from(TABLE).delete().eq('id', btn.dataset.del);
+        await loadGallery(); renderGallery(); updateStats();
+      };
+    });
+  }
+
+  function updateStats() { document.getElementById('totalImages').textContent = gallery.length; }
+
+  // ---- upload em lote ----
+  document.getElementById('btnBulk').addEventListener('click', async () => {
+    const input = document.getElementById('bulkFiles');
+    const files = Array.from(input.files || []);
+    const btn = document.getElementById('btnBulk');
+    const prog = document.getElementById('bulkProgress');
+    const fill = document.getElementById('bulkProgressFill');
+    const txt = document.getElementById('bulkProgressText');
+    if (!files.length) { showAlert('bulkAlert', 'error', 'Selecione ao menos uma imagem.'); return; }
+
+    btn.disabled = true;
+    prog.className = 'progress visible';
+    let ok = 0, fail = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      fill.style.width = Math.round((i / files.length) * 100) + '%';
+      txt.textContent = `Enviando ${i + 1} de ${files.length}: ${file.name}`;
+      try {
+        const url = await uploadFile(file);
+        const titulo = titleFromFilename(file.name);
+        const { error } = await sb.from(TABLE).insert({ titulo, image_url: url, tags: [], decor: true });
+        if (error) throw error;
+        ok++;
+      } catch (err) { fail++; console.warn('Falha:', file.name, err.message); }
+    }
+
+    fill.style.width = '100%';
+    prog.className = 'progress';
+    btn.disabled = false;
+    input.value = '';
+    await loadGallery(); renderGallery(); updateStats();
+    showAlert('bulkAlert', fail ? 'error' : 'success', fail ? `${ok} enviados, ${fail} falharam.` : `${ok} imagens enviadas.`);
+  });
+
+  // ---- upload individual ----
+  document.getElementById('imageFile').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = document.getElementById('previewImage');
+      img.src = ev.target.result; img.style.display = 'block';
+      document.getElementById('previewPlaceholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('btnAdd').addEventListener('click', async () => {
+    const fileInput = document.getElementById('imageFile');
+    const file = fileInput.files[0];
+    const titulo = document.getElementById('imageTitle').value.trim();
+    const decor = document.getElementById('imageDecor').checked;
+    const prog = document.getElementById('uploadProgress');
+    const fill = document.getElementById('progressFill');
+    if (!file) { showAlert('mainAlert', 'error', 'Selecione uma imagem.'); return; }
+
+    prog.className = 'progress visible';
+    fill.style.width = '40%';
+    try {
+      const url = await uploadFile(file);
+      fill.style.width = '80%';
+      const { error } = await sb.from(TABLE).insert({
+        titulo: titulo || titleFromFilename(file.name),
+        image_url: url, tags: [], decor
+      });
+      if (error) throw error;
+      fill.style.width = '100%';
+      showAlert('mainAlert', 'success', 'Imagem publicada.');
+      fileInput.value = '';
+      document.getElementById('imageTitle').value = '';
+      document.getElementById('previewImage').style.display = 'none';
+      document.getElementById('previewPlaceholder').style.display = 'block';
+      await loadGallery(); renderGallery(); updateStats();
+    } catch (err) {
+      showAlert('mainAlert', 'error', 'Falha: ' + err.message);
+    } finally {
+      setTimeout(() => prog.className = 'progress', 800);
+    }
+  });
+
+  // ---- login ----
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const errEl = document.getElementById('loginErr');
+    errEl.textContent = 'Redirecionando pro Google...';
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href }
+    });
+    if (error) errEl.textContent = 'Não foi possível iniciar o login.';
+  });
+
+  async function logout() {
+    if (!confirm('Sair?')) return;
+    await sb.auth.signOut();
+    location.reload();
+  }
+
+  async function showPanel() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    await loadGallery(); renderGallery(); updateStats();
+  }
+
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+
+    const { data: perfil, error } = await sb
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', session.user.id)
+      .single();
+
+    if (error || !perfil?.is_admin) {
+      document.getElementById('loginErr').textContent = 'essa conta Google não tem permissão de admin aqui';
+      await sb.auth.signOut();
+      return;
+    }
+
+    showPanel();
+  })();
+</script>
+</body>
+</html>
