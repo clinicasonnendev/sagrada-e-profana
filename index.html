@@ -1543,7 +1543,7 @@ function renderLivroPage(id){
   document.getElementById('livro-detalhe').innerHTML = `
     <div class="eyebrow">livro ${l.numero}</div>
     <h2 style="font-family:var(--font-heading); font-size:44px; color:var(--white); margin-top:10px;">${l.nome}</h2>
-    <p style="font-style:italic; color:var(--ink); font-size:19px; margin-top:14px; max-width:560px;">${l.epigrafe}</p>
+    <p style="font-style:italic; color:var(--ink); font-size:19px; margin-top:14px;">${l.epigrafe}</p>
     <div class="posts-list" style="margin-top:44px;">
       ${ps.map((p,i)=>`
         <div class="post-row" onclick="navPost(${p.id})">
