@@ -204,6 +204,29 @@ img{max-width:100%; display:block;}
   font-family:var(--font-display); font-size:74px; float:left; line-height:0.8; padding:8px 12px 0 0; color:var(--gold-bright);
 }
 .reader-back{display:inline-block; margin-bottom:30px; color:var(--gold); font-family:var(--font-ui); font-size:13px; letter-spacing:.06em;}
+.reader-body ul, .reader-body ol{margin:0 0 24px 28px;}
+.reader-body li{margin-bottom:8px;}
+.reader-body blockquote{border-left:3px solid var(--gold-dim); margin:0 0 24px; padding:4px 0 4px 22px; color:var(--ink); font-style:italic;}
+.reader-body img{max-width:100%; height:auto; border-radius:var(--radius); margin:8px 0 28px; display:block;}
+.reader-body a{color:var(--gold-bright); text-decoration:underline;}
+
+/* ============ EDITOR DE TEXTO RICO (Quill) ============ */
+.rich-editor{background:var(--void-2); border:1px solid var(--purple-line); border-radius:var(--radius); overflow:hidden;}
+.rich-editor .ql-toolbar.ql-snow{background:var(--panel-2); border:none; border-bottom:1px solid var(--purple-line); font-family:var(--font-ui);}
+.rich-editor .ql-toolbar.ql-snow .ql-stroke{stroke:var(--ink);}
+.rich-editor .ql-toolbar.ql-snow .ql-fill{fill:var(--ink);}
+.rich-editor .ql-toolbar.ql-snow .ql-picker-label{color:var(--ink);}
+.rich-editor .ql-toolbar.ql-snow button:hover .ql-stroke, .rich-editor .ql-toolbar.ql-snow button.ql-active .ql-stroke{stroke:var(--gold-bright);}
+.rich-editor .ql-toolbar.ql-snow button:hover .ql-fill, .rich-editor .ql-toolbar.ql-snow button.ql-active .ql-fill{fill:var(--gold-bright);}
+.rich-editor .ql-toolbar.ql-snow button:hover .ql-picker-label, .rich-editor .ql-toolbar.ql-snow .ql-picker-label:hover, .rich-editor .ql-toolbar.ql-snow .ql-picker-item:hover{color:var(--gold-bright);}
+.rich-editor .ql-picker-options{background:var(--panel-3); border:1px solid var(--purple-line);}
+.rich-editor .ql-container.ql-snow{border:none; font-family:var(--font-body); font-size:17px;}
+.rich-editor .ql-editor{color:var(--parchment); min-height:280px; line-height:1.7;}
+.rich-editor .ql-editor.ql-blank::before{color:var(--ink); font-style:normal; opacity:.7;}
+.rich-editor .ql-editor img{max-width:100%; border-radius:2px;}
+.rich-editor .ql-editor blockquote{border-left:3px solid var(--gold-dim); color:var(--ink);}
+.rich-editor .ql-snow .ql-tooltip{background:var(--panel-3); border:1px solid var(--purple-line); color:var(--parchment); box-shadow:none;}
+.rich-editor .ql-snow .ql-tooltip input[type=text]{background:var(--void-2); color:var(--parchment); border:1px solid var(--purple-line);}
 
 /* ============ ABOUT NONA ============ */
 .about{
@@ -418,6 +441,7 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
 .login-back{display:inline-block; margin-top:22px; font-size:13px; color:var(--ink); font-family:var(--font-ui);}
 .login-back:hover{color:var(--gold-bright);}
 </style>
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
 </head>
 <body>
 
@@ -698,15 +722,14 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
             <div class="field">
               <label>Conteúdo</label>
               <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
-                <button type="button" class="btn-secondary" style="padding:8px 14px; font-size:12px;" onclick="prepararUploadImagem()">+ Enviar imagem</button>
                 <button type="button" class="btn-secondary" style="padding:8px 14px; font-size:12px;" onclick="toggleGaleriaImagens()">Galeria de imagens</button>
                 <input type="file" id="post-imagem-file" accept="image/*" style="display:none" onchange="handlePostImagemUpload(event)">
               </div>
               <div id="galeria-imagens-panel" class="hidden panel" style="padding:16px; margin-bottom:14px; max-height:240px; overflow-y:auto;">
                 <div class="media-grid" id="galeria-imagens-grid"></div>
               </div>
-              <textarea id="f-conteudo" rows="14" placeholder="Escreva o texto completo aqui. Separe parágrafos com uma linha em branco." oninput="onEditorInput()"></textarea>
-              <div style="font-size:12px; color:var(--ink); margin-top:6px;">A imagem entra na posição do cursor. Clique numa imagem da galeria pra reaproveitar sem enviar de novo.</div>
+              <div id="f-conteudo-quill" class="rich-editor"></div>
+              <div style="font-size:12px; color:var(--ink); margin-top:6px;">Use a barra de ferramentas para negrito, listas, alinhamento e imagens. O ícone de imagem na barra envia direto pro Supabase. "Galeria de imagens" reaproveita uma imagem já enviada, na posição do cursor.</div>
             </div>
             <div class="field">
               <label>Tags (separadas por vírgula)</label>
@@ -998,6 +1021,7 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
 /* =====================================================================
    SUPABASE — conexão com o banco real
@@ -1574,7 +1598,7 @@ function renderPostPage(id){
     <h1>${p.titulo}</h1>
     <div class="reader-meta">${formatDate(p.data)} · por Nona · ${(p.views||0).toLocaleString('pt-BR')} leituras</div>
     ${p.imagemCapa ? `<img class="reader-cover" src="${p.imagemCapa}" alt="">` : ''}
-    <div class="reader-body">${p.conteudo.split('\n\n').map(par=>`<p>${par}</p>`).join('')}</div>
+    <div class="reader-body">${migrarConteudoParaHtml(p.conteudo)}</div>
   `;
   ['inicio','livros','livro','sobre','loja'].forEach(s=>document.getElementById('page-'+s).classList.add('hidden'));
   document.getElementById('page-post').classList.remove('hidden');
@@ -1773,17 +1797,19 @@ function seoScoreFor(p){
   else if(descLen>0){score+=7; checks.push(['warn','Meta descrição fora do ideal (120–160 caracteres)']);}
   else checks.push(['bad','Meta descrição não definida']);
 
+  const conteudoTexto = stripHtml(p.conteudo);
+
   max+=15;
   const kw = (p.keyword||'').toLowerCase().trim();
   if(kw){
     const inTitle = (p.titulo||'').toLowerCase().includes(kw);
-    const inContent = (p.conteudo||'').toLowerCase().includes(kw);
+    const inContent = conteudoTexto.toLowerCase().includes(kw);
     if(inTitle && inContent){score+=15; checks.push(['ok','Palavra-chave presente no título e no texto']);}
     else if(inContent){score+=8; checks.push(['warn','Palavra-chave no texto, mas ausente do título']);}
     else checks.push(['bad','Palavra-chave não encontrada no texto']);
   } else checks.push(['bad','Nenhuma palavra-chave principal definida']);
 
-  const wc = (p.conteudo||'').trim().split(/\s+/).filter(Boolean).length;
+  const wc = conteudoTexto.trim().split(/\s+/).filter(Boolean).length;
   max+=20; if(wc>=250){score+=20; checks.push(['ok',`Conteúdo com ${wc} palavras (bom tamanho)`]);}
   else if(wc>=100){score+=10; checks.push(['warn',`Conteúdo com apenas ${wc} palavras`]);}
   else checks.push(['bad',`Conteúdo muito curto (${wc} palavras)`]);
@@ -1810,7 +1836,7 @@ function readEditorPost(){
     livroId: parseInt(document.getElementById('f-livro').value),
     categoriaId: catVal ? parseInt(catVal) : null,
     resumo: document.getElementById('f-resumo').value,
-    conteudo: document.getElementById('f-conteudo').value,
+    conteudo: quillEditor ? getQuillHtml() : '',
     tags: document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     keyword: document.getElementById('f-keyword').value,
     metaTitulo: document.getElementById('f-meta-titulo').value,
@@ -1844,11 +1870,12 @@ function onEditorInput(){
   document.getElementById('serp-title').textContent = p.metaTitulo || p.titulo || 'Título do post aparecerá aqui';
   document.getElementById('serp-desc').textContent = p.metaDesc || p.resumo || 'A meta descrição aparecerá aqui, mostrando como seu texto será visto no Google.';
 
-  const wc = (p.conteudo||'').trim().split(/\s+/).filter(Boolean).length;
+  const conteudoTexto = stripHtml(p.conteudo);
+  const wc = conteudoTexto.trim().split(/\s+/).filter(Boolean).length;
   const kw = (p.keyword||'').toLowerCase().trim();
   let dens = 0;
   if(kw && wc>0){
-    const occurrences = (p.conteudo.toLowerCase().match(new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length;
+    const occurrences = (conteudoTexto.toLowerCase().match(new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length;
     dens = ((occurrences/wc)*100);
   }
   document.getElementById('keyword-density').innerHTML = kw
@@ -1863,32 +1890,69 @@ function onEditorInput(){
 document.getElementById('f-slug').addEventListener('input', e=>{ e.target.dataset.touched='1'; });
 
 /* =====================================================================
-   IMAGENS NO EDITOR — upload, galeria reutilizável, inserção no cursor
+   CONTEÚDO EM HTML — utilidades de conversão/compatibilidade
 ===================================================================== */
-let editorCursorPos = null;
-function updateEditorCursor(){
-  const ta = document.getElementById('f-conteudo');
-  if(ta) editorCursorPos = ta.selectionStart;
+// Extrai texto puro de um HTML, para contagem de palavras e busca de palavra-chave.
+function stripHtml(html){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  return (tmp.textContent || tmp.innerText || '').replace(/\s+/g,' ').trim();
 }
 
-function insertImageAtCursor(url, alt){
-  const ta = document.getElementById('f-conteudo');
-  const pos = (editorCursorPos !== null) ? editorCursorPos : ta.value.length;
-  const before = ta.value.slice(0, pos);
-  const after = ta.value.slice(pos);
-  const breakBefore = (before.length && !before.endsWith('\n\n')) ? (before.endsWith('\n') ? '\n' : '\n\n') : '';
-  const breakAfter = (after.length && !after.startsWith('\n\n')) ? (after.startsWith('\n') ? '\n' : '\n\n') : '\n\n';
-  const snippet = `${breakBefore}<img src="${url}" alt="${(alt||'').replace(/"/g,'')}">${breakAfter}`;
-  ta.value = before + snippet + after;
-  editorCursorPos = before.length + snippet.length;
-  ta.focus();
-  ta.selectionStart = ta.selectionEnd = editorCursorPos;
-  onEditorInput();
+// Posts antigos foram salvos como texto puro (parágrafos separados por linha em branco,
+// com <img> cru no meio). Detecta esse formato e converte para HTML real de parágrafos,
+// preservando qualquer post já salvo em HTML (feito pelo editor rico) como está.
+function migrarConteudoParaHtml(raw){
+  if(!raw) return '';
+  if(/<(p|div|h[1-6]|ul|ol|li|blockquote)[\s>]/i.test(raw)) return raw;
+  return raw.split('\n\n').map(par=>`<p>${par}</p>`).join('');
 }
 
-function prepararUploadImagem(){
-  updateEditorCursor();
+/* =====================================================================
+   EDITOR RICO (Quill) — instância, imagens, galeria reutilizável
+===================================================================== */
+let quillEditor = null;
+let editorImageRange = null;
+
+function initQuillEditor(){
+  if(quillEditor || !window.Quill) return;
+  quillEditor = new Quill('#f-conteudo-quill', {
+    theme: 'snow',
+    placeholder: 'Escreva o texto completo aqui...',
+    modules: {
+      toolbar: {
+        container: [
+          [{header:[2,3,false]}],
+          ['bold','italic','underline','strike'],
+          [{list:'ordered'},{list:'bullet'}],
+          [{align:[]}],
+          ['blockquote','link','image'],
+          ['clean']
+        ],
+        handlers: { image: quillImageHandler }
+      }
+    }
+  });
+  quillEditor.on('text-change', ()=> onEditorInput());
+}
+
+// Retorna '' se o editor estiver vazio (Quill deixa um <p><br></p> residual), senão o HTML real.
+function getQuillHtml(){
+  if(!quillEditor) return '';
+  const html = quillEditor.root.innerHTML;
+  return (html === '<p><br></p>') ? '' : html;
+}
+
+function quillImageHandler(){
+  editorImageRange = quillEditor.getSelection(true);
   document.getElementById('post-imagem-file').click();
+}
+
+function insertImagemNoEditor(url){
+  const range = editorImageRange || quillEditor.getSelection(true) || {index: quillEditor.getLength()};
+  quillEditor.insertEmbed(range.index, 'image', url, 'user');
+  quillEditor.setSelection(range.index + 1, 0, 'user');
+  editorImageRange = null;
 }
 
 async function handlePostImagemUpload(evt){
@@ -1901,17 +1965,16 @@ async function handlePostImagemUpload(evt){
   const {error: upErr} = await db.storage.from('post-imagens').upload(path, file, {cacheControl:'3600', upsert:false});
   if(upErr){ console.error(upErr); showToast('Erro ao enviar imagem: '+upErr.message); return; }
   const {data:pub} = db.storage.from('post-imagens').getPublicUrl(path);
-  const alt = file.name.replace(/\.[^.]+$/,'');
   const {error: insErr} = await db.from('post_imagens').insert({image_url: pub.publicUrl, path});
   if(insErr){ console.error(insErr); showToast('Erro ao salvar referência da imagem: '+insErr.message); }
-  insertImageAtCursor(pub.publicUrl, alt);
+  insertImagemNoEditor(pub.publicUrl);
   await loadPostImagens();
   renderGaleriaImagens();
   showToast('Imagem inserida no texto.');
 }
 
 function toggleGaleriaImagens(){
-  updateEditorCursor();
+  editorImageRange = quillEditor ? quillEditor.getSelection(true) : null;
   const panel = document.getElementById('galeria-imagens-panel');
   const opening = panel.classList.contains('hidden');
   panel.classList.toggle('hidden');
@@ -1925,19 +1988,16 @@ function renderGaleriaImagens(){
     <div class="media-item" style="background:var(--panel-2); cursor:pointer; padding:6px;" onclick="escolherImagemGaleria('${img.image_url}')" title="Inserir no texto">
       <img src="${img.image_url}" alt="" style="max-width:100%; max-height:100%; object-fit:cover; border-radius:2px;">
     </div>
-  `).join('') || `<p style="color:var(--ink); grid-column:1/-1; font-size:13px;">Nenhuma imagem enviada ainda. Use "+ Enviar imagem".</p>`;
+  `).join('') || `<p style="color:var(--ink); grid-column:1/-1; font-size:13px;">Nenhuma imagem enviada ainda. Use o ícone de imagem na barra de ferramentas.</p>`;
 }
 
 function escolherImagemGaleria(url){
-  insertImageAtCursor(url, '');
+  insertImagemNoEditor(url);
   document.getElementById('galeria-imagens-panel').classList.add('hidden');
   showToast('Imagem inserida no texto.');
 }
 
-['keyup','click','select','input'].forEach(evt=>{
-  const ta = document.getElementById('f-conteudo');
-  if(ta) ta.addEventListener(evt, updateEditorCursor);
-});
+initQuillEditor();
 
 function onCapaImagemSelecionada(evt){
   capaImagemPendente = evt.target.files[0] || null;
@@ -1950,7 +2010,8 @@ function limparEditor(){
   editingId = null;
   capaImagemPendente = null;
   document.getElementById('editor-title').textContent = 'Novo Post';
-  ['f-titulo','f-resumo','f-conteudo','f-tags','f-keyword','f-meta-titulo','f-meta-desc','f-slug'].forEach(id=>document.getElementById(id).value='');
+  ['f-titulo','f-resumo','f-tags','f-keyword','f-meta-titulo','f-meta-desc','f-slug'].forEach(id=>document.getElementById(id).value='');
+  if(quillEditor) quillEditor.setText('');
   document.getElementById('f-slug').dataset.touched='';
   document.getElementById('f-status').value='rascunho';
   if(livros.length) document.getElementById('f-livro').value = livros[0].id;
@@ -1970,7 +2031,7 @@ function editarPost(id){
   document.getElementById('f-categoria').value = p.categoriaId||'';
   document.getElementById('f-status').value = p.status;
   document.getElementById('f-resumo').value = p.resumo;
-  document.getElementById('f-conteudo').value = p.conteudo;
+  if(quillEditor) quillEditor.root.innerHTML = migrarConteudoParaHtml(p.conteudo);
   document.getElementById('f-tags').value = (p.tags||[]).join(', ');
   document.getElementById('f-keyword').value = p.keyword||'';
   document.getElementById('f-meta-titulo').value = p.metaTitulo||'';
@@ -2036,7 +2097,7 @@ function renderPostsTable(){
   let list = posts.filter(p=>p.titulo.toLowerCase().includes(search));
   if(filtroLivro) list = list.filter(p=>p.livroId===parseInt(filtroLivro));
   document.getElementById('posts-table').innerHTML = list.map(p=>{
-    const wc = (p.conteudo||'').trim().split(/\s+/).filter(Boolean).length;
+    const wc = stripHtml(p.conteudo).trim().split(/\s+/).filter(Boolean).length;
     const {pct} = seoScoreFor(p);
     const seoColor = pct>=70?'#7fbf8a':pct>=40?'#c9a24a':'#c9707a';
     return `<tr>
