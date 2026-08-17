@@ -19,7 +19,7 @@
 }(window.location));
 </script>
 <title>Sagrada e Profana — os escritos de Nona</title>
-<meta name="description" content="Sagrada e Profana: o Pentateuco de Nona. Textos, versos e confissões divididos em livros, entre o sagrado e o profano.">
+<meta name="description" content="Sagrada e Profana: o Pentateuco de Nona. Textos, versos e confissões divididas em livros, entre o sagrado e o profano.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -1066,7 +1066,7 @@ async function loadLivros(){
 }
 
 async function loadPosts(){
-  const {data, error} = await db.from('posts').select('*').order('data', {ascending:false});
+  const {data, error} = await db.from('posts').select('*').order('data', {ascending:false}).order('id', {ascending:false});
   if(error){ console.error(error); showToast('Erro ao carregar posts do Supabase.'); return; }
   posts = (data||[]).map(p=>({
     id:p.id, titulo:p.titulo, livroId:p.livro_id, categoriaId:p.categoria_id, status:p.status, data:p.data,
@@ -1484,7 +1484,11 @@ function categoriaBadge(p){
   const c = categoriaById(p.categoriaId);
   return c ? `<span style="color:${c.cor}; margin-left:8px;">· ${c.nome}</span>` : '';
 }
-function postsDoLivro(id){ return posts.filter(p=>p.livroId===id && p.status==='publicado'); }
+function postsDoLivro(id){
+  return posts
+    .filter(p=>p.livroId===id && p.status==='publicado')
+    .sort((a,b)=> new Date(b.data)-new Date(a.data) || b.id-a.id);
+}
 
 /* =====================================================================
    LOJA — vitrine pública de produtos
@@ -1616,7 +1620,7 @@ function navPost(id){
 
 function renderUltimosPosts(){
   const el = document.getElementById('ultimos-posts');
-  const ps = posts.filter(p=>p.status==='publicado').sort((a,b)=>new Date(b.data)-new Date(a.data)).slice(0,6);
+  const ps = posts.filter(p=>p.status==='publicado').sort((a,b)=>new Date(b.data)-new Date(a.data) || b.id-a.id).slice(0,6);
   el.innerHTML = ps.map((p,i)=>{
     const l = livroById(p.livroId);
     return `<div class="post-row" onclick="navPost(${p.id})">
