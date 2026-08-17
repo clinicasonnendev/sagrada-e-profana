@@ -476,7 +476,7 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
     <header class="hero">
       <div class="hero-eyebrow"></div>
       <h1>Sagrada <span>&amp;</span> Profana</h1>
-      <p class="hero-sub">"Entre o incenso e a cinza, escrevo o que a carne reza e a alma peca."</p>
+      <p class="hero-sub">"Entre cigarros e cinzas, Nona escreve à meia-noite o que a carne reza e a alma peca."</p>
       <svg class="hero-divider sigil" width="90" height="40" viewBox="0 0 90 40">
         <line x1="0" y1="20" x2="30" y2="20" stroke="#c9a24a" stroke-width="1"/>
         <circle cx="45" cy="20" r="8" stroke="#e8c76a" stroke-width="1"/>
@@ -560,6 +560,7 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
 
   <footer>
     <div class="brand-text">Sagrada e Profana</div>
+    <p class="footer-note" id="footer-bio" style="margin-top:14px; font-style:italic; font-family:var(--font-body); font-size:15px; color:var(--ink); letter-spacing:0; text-transform:none;"></p>
     <div class="footer-links">
       <a href="#" onclick="navSection('inicio');return false;">Início</a>
       <a href="#" onclick="navSection('livros');return false;">Livros</a>
@@ -636,7 +637,7 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
       <div class="panel">
         <h3>Posts com melhor desempenho</h3>
         <table>
-          <thead><tr><th>Título</th><th>Livro</th><th>Visualizações</th><th>Tempo médio</th></tr></thead>
+          <thead><tr><th>Título</th><th>Livro</th><th>Visualizações (leituras)</th><th>Últimos 30 dias</th></tr></thead>
           <tbody id="top-posts-table"></tbody>
         </table>
       </div>
@@ -849,8 +850,20 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
     <!-- MÍDIA -->
     <section class="dash-section" id="d-midia">
       <div class="dash-topbar">
-        <div><h1>Mídia</h1><div class="sub">Imagens e relíquias visuais do blog.</div></div>
-        <button class="btn-primary" onclick="showToast('Envio de mídia simulado neste protótipo.')">+ Enviar arquivo</button>
+        <div><h1>Mídia</h1><div class="sub">Todas as imagens já enviadas ao blog — capas, conteúdo de posts, produtos e símbolos.</div></div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-primary" onclick="document.getElementById('midia-file').click()">+ Enviar arquivo</button>
+          <input type="file" id="midia-file" accept="image/*" style="display:none" onchange="handleMidiaUpload(event)">
+        </div>
+      </div>
+      <div class="toolbar">
+        <select id="midia-filtro" onchange="renderMedia()" style="max-width:220px;">
+          <option value="">Todas as origens</option>
+          <option value="avulsa">Avulsas / conteúdo de post</option>
+          <option value="capa">Capas de post</option>
+          <option value="produto">Produtos</option>
+          <option value="simbolo">Símbolos</option>
+        </select>
       </div>
       <div class="panel">
         <div class="media-grid" id="media-grid"></div>
@@ -941,29 +954,24 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
         <div>
           <div class="panel">
             <h3>Metadados globais</h3>
-            <div class="field"><label>Título do site</label><input type="text" id="g-titulo" value="Sagrada e Profana — os escritos de Nona"></div>
-            <div class="field"><label>Descrição do site</label><textarea rows="3" id="g-desc">Sagrada e Profana: o Pentateuco de Nona. Textos, versos e confissões divididas em livros, entre o sagrado e o profano.</textarea></div>
-            <div class="field"><label>Palavras-chave foco</label><input type="text" id="g-keywords" value="poesia, textos autorais, blog literário, fé e desejo, Nona"></div>
-            <button class="btn-primary" onclick="showToast('Metadados globais salvos.')">Salvar metadados</button>
+            <div class="field"><label>Título do site</label><input type="text" id="g-titulo"></div>
+            <div class="field"><label>Descrição do site</label><textarea rows="3" id="g-desc"></textarea></div>
+            <div class="field"><label>Palavras-chave foco</label><input type="text" id="g-keywords"></div>
+            <button class="btn-primary" onclick="salvarConfiguracoes()">Salvar metadados</button>
           </div>
           <div class="panel">
             <h3>Open Graph (compartilhamento social)</h3>
             <div class="serp-preview" style="background:var(--panel-2);">
-              <div style="height:110px; background:linear-gradient(150deg,var(--purple-deep),var(--panel-3)); border-radius:4px; display:flex; align-items:center; justify-content:center; color:var(--gold-bright); font-family:var(--font-display); font-size:20px;">Sagrada e Profana</div>
+              <div id="og-preview-box" style="height:110px; background:linear-gradient(150deg,var(--purple-deep),var(--panel-3)); border-radius:4px; display:flex; align-items:center; justify-content:center; color:var(--gold-bright); font-family:var(--font-display); font-size:20px; text-align:center; padding:0 12px;">Sagrada e Profana</div>
               <div style="font-size:11px; color:var(--ink); margin-top:8px; text-transform:uppercase; letter-spacing:.06em;">sagradaeprofana.com.br</div>
-              <div style="font-size:15px; color:var(--white); margin-top:3px;">Sagrada e Profana — os escritos de Nona</div>
+              <div style="font-size:15px; color:var(--white); margin-top:3px;" id="og-preview-title">Sagrada e Profana — os escritos de Nona</div>
             </div>
           </div>
         </div>
         <div>
           <div class="panel">
             <h3>Saúde técnica de SEO</h3>
-            <div class="seo-check ok"><div class="dot"></div>Sitemap.xml gerado automaticamente</div>
-            <div class="seo-check ok"><div class="dot"></div>Robots.txt configurado</div>
-            <div class="seo-check ok"><div class="dot"></div>URLs amigáveis (slugs) ativas</div>
-            <div class="seo-check ok"><div class="dot"></div>Marcação de dados estruturados (Article)</div>
-            <div class="seo-check warn"><div class="dot"></div>3 posts sem meta descrição definida</div>
-            <div class="seo-check warn"><div class="dot"></div>2 imagens sem texto alternativo</div>
+            <div id="seo-tecnico-checklist"></div>
             <button class="btn-secondary" style="margin-top:14px; width:100%;" onclick="showSitemap()">Ver sitemap.xml</button>
             <button class="btn-secondary" style="margin-top:10px; width:100%;" onclick="showRobots()">Ver robots.txt</button>
             <pre id="tech-preview" style="display:none; margin-top:14px; background:var(--void-2); padding:14px; border-radius:4px; font-size:12px; color:var(--ink); overflow-x:auto; white-space:pre-wrap;"></pre>
@@ -978,10 +986,11 @@ label{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(
       <div class="panel-row">
         <div class="panel">
           <h3>Sobre o blog</h3>
-          <div class="field"><label>Nome do blog</label><input type="text" value="Sagrada e Profana"></div>
-          <div class="field"><label>Nome da autora</label><input type="text" value="Nona"></div>
-          <div class="field"><label>Bio curta</label><textarea rows="3">Nona escreve à meia-noite, entre o incenso e a cinza.</textarea></div>
-          <button class="btn-primary" onclick="showToast('Configurações salvas.')">Salvar alterações</button>
+          <div class="field"><label>Nome do blog</label><input type="text" id="cfg-blog-nome"></div>
+          <div class="field"><label>Nome da autora</label><input type="text" id="cfg-autora-nome"></div>
+          <div class="field"><label>Bio curta</label><textarea rows="3" id="cfg-bio-curta"></textarea></div>
+          <div style="font-size:12px; color:var(--ink); margin:-6px 0 14px;">A bio curta aparece no rodapé do site, abaixo do nome do blog.</div>
+          <button class="btn-primary" onclick="salvarConfiguracoes()">Salvar alterações</button>
         </div>
         <div class="panel">
           <h3>Identidade visual</h3>
@@ -1052,6 +1061,82 @@ let editingCategoriaId = null;
 let editingProdutoId = null;
 let produtoImagemPendente = null;
 let capaImagemPendente = null;
+let siteConfig = {
+  siteTitulo: 'Sagrada e Profana — os escritos de Nona',
+  siteDesc: 'Sagrada e Profana: o Pentateuco de Nona. Textos, versos e confissões divididas em livros, entre o sagrado e o profano.',
+  siteKeywords: 'poesia, textos autorais, blog literário, fé e desejo, Nona',
+  blogNome: 'Sagrada e Profana',
+  autoraNome: 'Nona',
+  bioCurta: 'Nona escreve à meia-noite, entre o incenso e a cinza.'
+};
+
+async function loadSiteConfig(){
+  const {data, error} = await db.from('site_config').select('*').eq('id', 1).maybeSingle();
+  if(error){ console.error(error); return; }
+  if(data){
+    siteConfig = {
+      siteTitulo: data.site_titulo || siteConfig.siteTitulo,
+      siteDesc: data.site_desc || siteConfig.siteDesc,
+      siteKeywords: data.site_keywords || siteConfig.siteKeywords,
+      blogNome: data.blog_nome || siteConfig.blogNome,
+      autoraNome: data.autora_nome || siteConfig.autoraNome,
+      bioCurta: data.bio_curta || siteConfig.bioCurta
+    };
+  }
+  applySiteConfig();
+}
+
+// Aplica a configuração carregada em todo lugar do site público que a usa.
+function applySiteConfig(){
+  document.title = siteConfig.siteTitulo;
+  let metaDesc = document.querySelector('meta[name="description"]');
+  if(!metaDesc){ metaDesc = document.createElement('meta'); metaDesc.setAttribute('name','description'); document.head.appendChild(metaDesc); }
+  metaDesc.setAttribute('content', siteConfig.siteDesc);
+  let metaKw = document.querySelector('meta[name="keywords"]');
+  if(!metaKw){ metaKw = document.createElement('meta'); metaKw.setAttribute('name','keywords'); document.head.appendChild(metaKw); }
+  metaKw.setAttribute('content', siteConfig.siteKeywords);
+
+  document.querySelectorAll('.brand-text').forEach(el=>{
+    el.childNodes[0].textContent = siteConfig.blogNome;
+  });
+  const footerBio = document.getElementById('footer-bio');
+  if(footerBio) footerBio.textContent = siteConfig.bioCurta;
+}
+
+function populateConfigForms(){
+  const set = (id, val)=>{ const el=document.getElementById(id); if(el) el.value = val||''; };
+  set('cfg-blog-nome', siteConfig.blogNome);
+  set('cfg-autora-nome', siteConfig.autoraNome);
+  set('cfg-bio-curta', siteConfig.bioCurta);
+  set('g-titulo', siteConfig.siteTitulo);
+  set('g-desc', siteConfig.siteDesc);
+  set('g-keywords', siteConfig.siteKeywords);
+  const ogBox = document.getElementById('og-preview-box');
+  const ogTitle = document.getElementById('og-preview-title');
+  if(ogBox) ogBox.textContent = siteConfig.blogNome;
+  if(ogTitle) ogTitle.textContent = siteConfig.siteTitulo;
+}
+
+async function salvarConfiguracoes(){
+  const row = {
+    id: 1,
+    blog_nome: (document.getElementById('cfg-blog-nome')?.value || siteConfig.blogNome).trim(),
+    autora_nome: (document.getElementById('cfg-autora-nome')?.value || siteConfig.autoraNome).trim(),
+    bio_curta: (document.getElementById('cfg-bio-curta')?.value || siteConfig.bioCurta).trim(),
+    site_titulo: (document.getElementById('g-titulo')?.value || siteConfig.siteTitulo).trim(),
+    site_desc: (document.getElementById('g-desc')?.value || siteConfig.siteDesc).trim(),
+    site_keywords: (document.getElementById('g-keywords')?.value || siteConfig.siteKeywords).trim(),
+  };
+  const {error} = await db.from('site_config').upsert(row);
+  if(error){ console.error(error); showToast('Erro ao salvar configurações: '+error.message); return; }
+  siteConfig = {
+    blogNome: row.blog_nome, autoraNome: row.autora_nome, bioCurta: row.bio_curta,
+    siteTitulo: row.site_titulo, siteDesc: row.site_desc, siteKeywords: row.site_keywords
+  };
+  applySiteConfig();
+  populateConfigForms();
+  showToast('Configurações salvas — já refletidas no site.');
+}
 
 async function loadCategorias(){
   const {data, error} = await db.from('categorias').select('*').order('nome', {ascending:true});
@@ -1115,7 +1200,7 @@ async function loadProdutos(){
 }
 
 async function loadAll(){
-  await Promise.all([loadLivros(), loadCategorias(), loadPosts(), loadComentarios(), loadSimbolos(), loadPostImagens(), loadProdutos()]);
+  await Promise.all([loadLivros(), loadCategorias(), loadPosts(), loadComentarios(), loadSimbolos(), loadPostImagens(), loadProdutos(), loadSiteConfig()]);
 }
 
 /* =====================================================================
@@ -1459,6 +1544,39 @@ function renderProdutosTable(){
 /* =====================================================================
    NAVEGAÇÃO — SITE (com URLs limpas via History API)
 ===================================================================== */
+/* =====================================================================
+   ANALYTICS REAL — registra cada visualização de página pública no
+   Supabase (tabela pageviews). Sem números aleatórios: o que aparece
+   em Estatísticas vem só daqui.
+===================================================================== */
+function detectarDevice(){
+  const w = window.innerWidth;
+  if(w < 768) return 'mobile';
+  if(w < 1100) return 'tablet';
+  return 'desktop';
+}
+
+function detectarOrigem(){
+  const ref = document.referrer;
+  if(!ref) return 'direto';
+  try{
+    const host = new URL(ref).hostname.replace(/^www\./,'');
+    if(host === location.hostname) return 'direto';
+    if(/google\.|bing\.|duckduckgo\.|yahoo\./.test(host)) return 'busca';
+    if(/facebook\.|instagram\.|twitter\.|x\.com|tiktok\.|pinterest\.|linkedin\.|threads\./.test(host)) return 'social';
+    return 'referencia';
+  } catch(e){ return 'direto'; }
+}
+
+function logPageview(path){
+  // não conta visitas dentro do próprio painel administrativo
+  if(document.getElementById('dashboard-view')?.classList.contains('active')) return;
+  db.from('pageviews').insert({
+    path, device: detectarDevice(), referrer_type: detectarOrigem()
+  }).then(({error})=>{ if(error) console.error('pageview:', error); });
+}
+
+
 function renderSection(name){
   ['inicio','livros','livro','post','sobre','loja'].forEach(s=>{
     document.getElementById('page-'+s).classList.toggle('hidden', s!==name);
@@ -1467,6 +1585,8 @@ function renderSection(name){
   if(name==='inicio') renderUltimosPosts();
   if(name==='livros') renderLivrosGrid();
   if(name==='loja') renderLojaGrid('todos');
+  const paths = {inicio:'/', livros:'/livros', sobre:'/sobre', loja:'/loja'};
+  if(paths[name]) logPageview(paths[name]);
   runFlashDecor();
 }
 function navSection(name){
@@ -1557,7 +1677,7 @@ function renderLivrosGrid(){
 
 function postCapHtml(p, fallback){
   return p.imagemCapa
-    ? `<img class="post-thumb" src="${p.imagemCapa}" alt="">`
+    ? `<img class="post-thumb" src="${p.imagemCapa}" alt="${p.titulo}">`
     : `<div class="post-cap">${fallback}</div>`;
 }
 
@@ -1584,6 +1704,7 @@ function renderLivroPage(id){
   document.getElementById('page-livros').classList.add('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
   setTimeout(()=>document.querySelectorAll('.post-row').forEach(c=>c.classList.add('reveal')), 30);
+  logPageview('/livro/'+livroSlug(l));
   runFlashDecor();
 }
 function navLivro(id){
@@ -1600,16 +1721,38 @@ function renderPostPage(id){
     <a href="#" class="reader-back" onclick="navLivro(${l.id});return false;">&larr; voltar ao Livro ${l.numero}</a>
     <div class="reader-tag">Livro ${l.numero} · ${l.nome}</div>
     <h1>${p.titulo}</h1>
-    <div class="reader-meta">${formatDate(p.data)} · por Nona · ${(p.views||0).toLocaleString('pt-BR')} leituras</div>
-    ${p.imagemCapa ? `<img class="reader-cover" src="${p.imagemCapa}" alt="">` : ''}
+    <div class="reader-meta">${formatDate(p.data)} · por ${siteConfig.autoraNome} · ${(p.views||0).toLocaleString('pt-BR')} leituras</div>
+    ${p.imagemCapa ? `<img class="reader-cover" src="${p.imagemCapa}" alt="${p.titulo}">` : ''}
     <div class="reader-body">${migrarConteudoParaHtml(p.conteudo)}</div>
   `;
   ['inicio','livros','livro','sobre','loja'].forEach(s=>document.getElementById('page-'+s).classList.add('hidden'));
   document.getElementById('page-post').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
   runFlashDecor();
+  injectArticleStructuredData(p, l);
+  logPageview('/post/'+p.slug);
   p.views = (p.views||0)+1;
   db.from('posts').update({views:p.views}).eq('id', p.id).then(({error})=>{ if(error) console.error(error); });
+}
+
+// Marcação de dados estruturados (schema.org Article) — real, injetada por post.
+function injectArticleStructuredData(p, l){
+  document.getElementById('ld-article')?.remove();
+  const script = document.createElement('script');
+  script.type = 'application/ld+json';
+  script.id = 'ld-article';
+  script.textContent = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: p.titulo,
+    description: p.metaDesc || p.resumo || '',
+    author: {'@type':'Person', name: siteConfig.autoraNome},
+    datePublished: p.data,
+    image: p.imagemCapa || undefined,
+    articleSection: l.nome,
+    keywords: (p.tags||[]).join(', ') || undefined
+  });
+  document.head.appendChild(script);
 }
 function navPost(id){
   const p = posts.find(x=>x.id===id);
@@ -1730,17 +1873,47 @@ function renderDashboard(){
   renderStats();
   renderSimbolosGrid();
   renderProdutosTable();
+  populateConfigForms();
+  renderSeoTecnico();
 }
 
-function renderOverview(){
+async function fetchViews30dPorPost(){
+  const d30 = new Date(); d30.setDate(d30.getDate()-30);
+  const {data, error} = await db.from('pageviews').select('path').like('path','/post/%').gte('created_at', d30.toISOString());
+  if(error){ console.error(error); return {}; }
+  const counts = {};
+  (data||[]).forEach(r=>{ counts[r.path] = (counts[r.path]||0)+1; });
+  return counts;
+}
+
+async function renderOverview(){
   const totalPosts = posts.length;
   const publicados = posts.filter(p=>p.status==='publicado').length;
   const totalViews = posts.reduce((s,p)=>s+(p.views||0),0);
   const totalComentarios = comentarios.length;
 
+  const agora = new Date();
+  const d30 = new Date(agora); d30.setDate(d30.getDate()-30);
+  const d60 = new Date(agora); d60.setDate(d60.getDate()-60);
+  const [recentes, anteriores] = await Promise.all([
+    db.from('pageviews').select('*', {count:'exact', head:true}).gte('created_at', d30.toISOString()),
+    db.from('pageviews').select('*', {count:'exact', head:true}).gte('created_at', d60.toISOString()).lt('created_at', d30.toISOString())
+  ]);
+  const viewsRecentes = recentes.count || 0;
+  const viewsAnteriores = anteriores.count || 0;
+  let deltaTraffic = '<span class="stat-delta">ainda coletando dados de tráfego</span>';
+  if(viewsAnteriores>0){
+    const pct = Math.round(((viewsRecentes-viewsAnteriores)/viewsAnteriores)*100);
+    deltaTraffic = `<div class="stat-delta ${pct<0?'down':''}">${pct>=0?'+':''}${pct}% de tráfego vs. 30 dias anteriores</div>`;
+  } else if(viewsRecentes>0){
+    deltaTraffic = `<div class="stat-delta">${viewsRecentes} visita${viewsRecentes===1?'':'s'} nos últimos 30 dias</div>`;
+  } else {
+    deltaTraffic = `<div class="stat-delta" style="color:var(--ink);">ainda sem dados de tráfego</div>`;
+  }
+
   document.getElementById('overview-stats').innerHTML = `
     <div class="stat-card"><div class="stat-label">Total de posts</div><div class="stat-value">${totalPosts}</div><div class="stat-delta">${publicados} publicados</div></div>
-    <div class="stat-card"><div class="stat-label">Visualizações totais</div><div class="stat-value">${totalViews.toLocaleString('pt-BR')}</div><div class="stat-delta">+12% este mês</div></div>
+    <div class="stat-card"><div class="stat-label">Visualizações totais</div><div class="stat-value">${totalViews.toLocaleString('pt-BR')}</div>${deltaTraffic}</div>
     <div class="stat-card"><div class="stat-label">Livros ativos</div><div class="stat-value">${livros.filter(l=>!l.selado).length}</div><div class="stat-delta">${livros.filter(l=>l.selado).length} selado(s)</div></div>
     <div class="stat-card"><div class="stat-label">Categorias</div><div class="stat-value">${categorias.length}</div><div class="stat-delta">organizando ${posts.filter(p=>p.categoriaId).length} posts</div></div>
     <div class="stat-card"><div class="stat-label">Comentários</div><div class="stat-value">${totalComentarios}</div><div class="stat-delta down">${comentarios.filter(c=>c.status==='pendente').length} pendentes</div></div>
@@ -1753,31 +1926,67 @@ function renderOverview(){
     return `<div class="bar-col"><div class="bar" style="height:${h}px;" title="${v} views"></div><div class="bar-label">${l.numero}</div></div>`;
   }).join('');
 
+  const counts30 = await fetchViews30dPorPost();
   const top = [...posts].filter(p=>p.status==='publicado').sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,5);
   document.getElementById('top-posts-table').innerHTML = top.map(p=>`
-    <tr><td>${p.titulo}</td><td>${livroById(p.livroId).nome}</td><td>${(p.views||0).toLocaleString('pt-BR')}</td><td>${(2+Math.random()*3).toFixed(1)} min</td></tr>
-  `).join('');
+    <tr><td>${p.titulo}</td><td>${livroById(p.livroId).nome}</td><td>${(p.views||0).toLocaleString('pt-BR')}</td><td>${counts30['/post/'+p.slug]||0}</td></tr>
+  `).join('') || `<tr><td colspan="4" style="color:var(--ink); text-align:center; padding:20px;">Nenhum post publicado ainda.</td></tr>`;
 }
 
-function renderStats(){
+function statsBarraVazia(msg){
+  return `<p style="color:var(--ink); font-size:13px; padding:8px 0;">${msg}</p>`;
+}
+
+async function renderStats(){
   const dias = Array.from({length:14}, (_,i)=>{
     const d = new Date(); d.setDate(d.getDate()-(13-i));
     return d;
   });
-  const maxV = 320;
+  const desde = new Date(dias[0]); desde.setHours(0,0,0,0);
+
+  const {data, error} = await db.from('pageviews').select('device, referrer_type, created_at').gte('created_at', desde.toISOString());
+  if(error){
+    console.error(error);
+    document.getElementById('stats-bars').innerHTML = statsBarraVazia('Erro ao carregar dados de tráfego.');
+    return;
+  }
+  const rows = data || [];
+
+  if(!rows.length){
+    document.getElementById('stats-bars').innerHTML = statsBarraVazia('Ainda não há visitas registradas nos últimos 14 dias. Assim que o blog receber acessos, o gráfico aparece aqui.');
+    document.getElementById('traffic-source').innerHTML = statsBarraVazia('Sem dados suficientes ainda.');
+    document.getElementById('devices-source').innerHTML = statsBarraVazia('Sem dados suficientes ainda.');
+    return;
+  }
+
+  // visualizações por dia (últimos 14 dias)
+  const porDia = {};
+  rows.forEach(r=>{ const k = r.created_at.slice(0,10); porDia[k] = (porDia[k]||0)+1; });
+  const maxV = Math.max(...dias.map(d=>porDia[d.toISOString().slice(0,10)]||0), 1);
   document.getElementById('stats-bars').innerHTML = dias.map(d=>{
-    const v = Math.round(80+Math.random()*maxV);
-    const h = Math.round((v/(maxV+80))*200);
-    return `<div class="bar-col"><div class="bar" style="height:${h}px;" title="${v} views"></div><div class="bar-label">${d.getDate()}/${d.getMonth()+1}</div></div>`;
+    const key = d.toISOString().slice(0,10);
+    const v = porDia[key]||0;
+    const h = Math.max(4, Math.round((v/maxV)*200));
+    return `<div class="bar-col"><div class="bar" style="height:${h}px;" title="${v} visita${v===1?'':'s'}"></div><div class="bar-label">${d.getDate()}/${d.getMonth()+1}</div></div>`;
   }).join('');
 
-  document.getElementById('traffic-source').innerHTML = [
-    ['Busca orgânica',52],['Redes sociais',28],['Direto',14],['Referência',6]
-  ].map(([k,v])=>`<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:13px; color:var(--parchment);"><span>${k}</span><span>${v}%</span></div><div style="height:6px; background:var(--panel-2); border-radius:4px; margin-top:6px;"><div style="height:100%; width:${v}%; background:linear-gradient(90deg,var(--purple),var(--gold-bright)); border-radius:4px;"></div></div></div>`).join('');
+  // origem do tráfego (%)
+  const origemLabels = {busca:'Busca orgânica', social:'Redes sociais', direto:'Direto', referencia:'Referência'};
+  const origemCounts = {busca:0, social:0, direto:0, referencia:0};
+  rows.forEach(r=>{ origemCounts[r.referrer_type] = (origemCounts[r.referrer_type]||0)+1; });
+  document.getElementById('traffic-source').innerHTML = Object.entries(origemLabels).map(([key,label])=>{
+    const pct = Math.round((origemCounts[key]/rows.length)*100);
+    return `<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:13px; color:var(--parchment);"><span>${label}</span><span>${pct}%</span></div><div style="height:6px; background:var(--panel-2); border-radius:4px; margin-top:6px;"><div style="height:100%; width:${pct}%; background:linear-gradient(90deg,var(--purple),var(--gold-bright)); border-radius:4px;"></div></div></div>`;
+  }).join('');
 
-  document.getElementById('devices-source').innerHTML = [
-    ['Celular',61],['Desktop',33],['Tablet',6]
-  ].map(([k,v])=>`<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:13px; color:var(--parchment);"><span>${k}</span><span>${v}%</span></div><div style="height:6px; background:var(--panel-2); border-radius:4px; margin-top:6px;"><div style="height:100%; width:${v}%; background:linear-gradient(90deg,var(--purple),var(--gold-bright)); border-radius:4px;"></div></div></div>`).join('');
+  // dispositivos (%)
+  const deviceLabels = {mobile:'Celular', desktop:'Desktop', tablet:'Tablet'};
+  const deviceCounts = {mobile:0, desktop:0, tablet:0};
+  rows.forEach(r=>{ deviceCounts[r.device] = (deviceCounts[r.device]||0)+1; });
+  document.getElementById('devices-source').innerHTML = Object.entries(deviceLabels).map(([key,label])=>{
+    const pct = Math.round((deviceCounts[key]/rows.length)*100);
+    return `<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:13px; color:var(--parchment);"><span>${label}</span><span>${pct}%</span></div><div style="height:6px; background:var(--panel-2); border-radius:4px; margin-top:6px;"><div style="height:100%; width:${pct}%; background:linear-gradient(90deg,var(--purple),var(--gold-bright)); border-radius:4px;"></div></div></div>`;
+  }).join('');
 }
 
 function populateLivroSelects(){
@@ -1786,6 +1995,41 @@ function populateLivroSelects(){
   document.getElementById('posts-filter-livro').innerHTML = `<option value="">Todos os livros</option>` + opts;
   const catOpts = categorias.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   document.getElementById('f-categoria').innerHTML = `<option value="">Nenhuma</option>` + catOpts;
+}
+
+function contarImagensSemAlt(html){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  let n = 0;
+  tmp.querySelectorAll('img').forEach(img=>{
+    if(!img.getAttribute('alt') || !img.getAttribute('alt').trim()) n++;
+  });
+  return n;
+}
+
+function renderSeoTecnico(){
+  const el = document.getElementById('seo-tecnico-checklist');
+  if(!el) return;
+  const publicados = posts.filter(p=>p.status==='publicado');
+
+  const semMetaDesc = publicados.filter(p=>!p.metaDesc || !p.metaDesc.trim()).length;
+  // capa agora sempre tem alt (título do post) gerado na renderização — só sobra o conteúdo do corpo
+  let imgsSemAlt = 0;
+  publicados.forEach(p=> imgsSemAlt += contarImagensSemAlt(p.conteudo));
+
+  const checks = [
+    ['ok', 'Sitemap.xml gerado automaticamente'],
+    ['ok', 'Robots.txt configurado'],
+    ['ok', 'URLs amigáveis (slugs) ativas'],
+    ['ok', 'Marcação de dados estruturados (Article) injetada em cada post'],
+    semMetaDesc>0
+      ? ['warn', `${semMetaDesc} post${semMetaDesc===1?'':'s'} publicado${semMetaDesc===1?'':'s'} sem meta descrição definida`]
+      : ['ok', 'Todos os posts publicados têm meta descrição'],
+    imgsSemAlt>0
+      ? ['warn', `${imgsSemAlt} imagem${imgsSemAlt===1?'':'ns'} no corpo dos posts sem texto alternativo`]
+      : ['ok', 'Todas as imagens no corpo dos posts têm texto alternativo'],
+  ];
+  el.innerHTML = checks.map(([lvl,txt])=>`<div class="seo-check ${lvl}"><div class="dot"></div>${txt}</div>`).join('');
 }
 
 function seoScoreFor(p){
@@ -1952,11 +2196,22 @@ function quillImageHandler(){
   document.getElementById('post-imagem-file').click();
 }
 
-function insertImagemNoEditor(url){
+function insertImagemNoEditor(url, altText){
   const range = editorImageRange || quillEditor.getSelection(true) || {index: quillEditor.getLength()};
   quillEditor.insertEmbed(range.index, 'image', url, 'user');
   quillEditor.setSelection(range.index + 1, 0, 'user');
   editorImageRange = null;
+  if(altText){
+    // Quill não expõe "alt" no insertEmbed de imagem; setamos direto no DOM logo após inserir.
+    requestAnimationFrame(()=>{
+      const imgs = quillEditor.root.querySelectorAll(`img[src="${CSS.escape(url)}"]:not([alt])`);
+      if(imgs.length) imgs[imgs.length-1].setAttribute('alt', altText);
+    });
+  }
+}
+
+function humanizeFileName(name){
+  return (name||'').replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').trim() || 'imagem do post';
 }
 
 async function handlePostImagemUpload(evt){
@@ -1969,9 +2224,10 @@ async function handlePostImagemUpload(evt){
   const {error: upErr} = await db.storage.from('post-imagens').upload(path, file, {cacheControl:'3600', upsert:false});
   if(upErr){ console.error(upErr); showToast('Erro ao enviar imagem: '+upErr.message); return; }
   const {data:pub} = db.storage.from('post-imagens').getPublicUrl(path);
-  const {error: insErr} = await db.from('post_imagens').insert({image_url: pub.publicUrl, path});
+  const alt = humanizeFileName(file.name);
+  const {error: insErr} = await db.from('post_imagens').insert({image_url: pub.publicUrl, path, alt});
   if(insErr){ console.error(insErr); showToast('Erro ao salvar referência da imagem: '+insErr.message); }
-  insertImagemNoEditor(pub.publicUrl);
+  insertImagemNoEditor(pub.publicUrl, alt);
   await loadPostImagens();
   renderGaleriaImagens();
   showToast('Imagem inserida no texto.');
@@ -1989,14 +2245,14 @@ function renderGaleriaImagens(){
   const el = document.getElementById('galeria-imagens-grid');
   if(!el) return;
   el.innerHTML = postImagens.map(img=>`
-    <div class="media-item" style="background:var(--panel-2); cursor:pointer; padding:6px;" onclick="escolherImagemGaleria('${img.image_url}')" title="Inserir no texto">
-      <img src="${img.image_url}" alt="" style="max-width:100%; max-height:100%; object-fit:cover; border-radius:2px;">
+    <div class="media-item" style="background:var(--panel-2); cursor:pointer; padding:6px;" onclick="escolherImagemGaleria('${img.image_url}', '${(img.alt||'').replace(/'/g,"\\'")}')" title="Inserir no texto">
+      <img src="${img.image_url}" alt="${img.alt||''}" style="max-width:100%; max-height:100%; object-fit:cover; border-radius:2px;">
     </div>
   `).join('') || `<p style="color:var(--ink); grid-column:1/-1; font-size:13px;">Nenhuma imagem enviada ainda. Use o ícone de imagem na barra de ferramentas.</p>`;
 }
 
-function escolherImagemGaleria(url){
-  insertImagemNoEditor(url);
+function escolherImagemGaleria(url, alt){
+  insertImagemNoEditor(url, alt);
   document.getElementById('galeria-imagens-panel').classList.add('hidden');
   showToast('Imagem inserida no texto.');
 }
@@ -2167,8 +2423,74 @@ async function excluirComentario(id){
 }
 
 function renderMedia(){
-  const icons = ['&#9670;','&#9733;','&#128214;','&#128366;','&#9878;','&#128374;','&#9711;','&#9884;'];
-  document.getElementById('media-grid').innerHTML = icons.map(i=>`<div class="media-item">${i}</div>`).join('');
+  const filtro = document.getElementById('midia-filtro')?.value || '';
+  let itens = [];
+
+  postImagens.forEach(img=> itens.push({
+    tipo:'avulsa', label:'Avulsa / conteúdo', url: img.image_url, alt: img.alt||'',
+    del: ()=>excluirImagemAvulsa(img.id, img.path)
+  }));
+  posts.filter(p=>p.imagemCapa).forEach(p=> itens.push({
+    tipo:'capa', label:`Capa · ${p.titulo}`, url: p.imagemCapa, alt: p.titulo,
+    del: null
+  }));
+  produtos.filter(p=>p.imagem_url).forEach(p=> itens.push({
+    tipo:'produto', label:`Produto · ${p.nome}`, url: p.imagem_url, alt: p.nome,
+    del: null
+  }));
+  simbolos.forEach(s=> itens.push({
+    tipo:'simbolo', label:'Símbolo decorativo', url: s.image_url, alt:'',
+    del: null
+  }));
+
+  if(filtro) itens = itens.filter(i=>i.tipo===filtro);
+
+  const el = document.getElementById('media-grid');
+  el.innerHTML = itens.map(i=>`
+    <div class="media-item" style="background:var(--panel-2); position:relative; padding:8px; flex-direction:column;" title="${i.label}">
+      <img src="${i.url}" alt="${i.alt}" style="width:100%; height:100%; object-fit:cover; border-radius:2px;">
+      ${i.del ? `<button style="position:absolute; top:6px; right:6px; background:var(--void); border:1px solid var(--purple-line); color:var(--ink); font-size:12px; padding:3px 8px; border-radius:var(--radius); cursor:pointer; font-family:var(--font-ui);" onclick="event.stopPropagation(); excluirMidiaAvulsa(${itens.indexOf(i)})" title="Excluir">&times;</button>` : ''}
+    </div>
+  `).join('') || `<p style="color:var(--ink); grid-column:1/-1; padding:10px 0;">Nenhuma imagem encontrada nessa categoria.</p>`;
+
+  // guarda a lista atual pra excluirMidiaAvulsa achar o item pelo índice sem re-renderizar tudo de novo
+  window._midiaItensAtuais = itens;
+}
+
+function excluirMidiaAvulsa(idx){
+  const item = window._midiaItensAtuais?.[idx];
+  if(item && item.del) item.del();
+}
+
+async function handleMidiaUpload(evt){
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if(!file) return;
+  showToast('Enviando imagem...');
+  const safeName = file.name.replace(/[^a-zA-Z0-9.\-]/g,'_');
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}-${safeName}`;
+  const {error: upErr} = await db.storage.from('post-imagens').upload(path, file, {cacheControl:'3600', upsert:false});
+  if(upErr){ console.error(upErr); showToast('Erro ao enviar imagem: '+upErr.message); return; }
+  const {data:pub} = db.storage.from('post-imagens').getPublicUrl(path);
+  const alt = humanizeFileName(file.name);
+  const {error: insErr} = await db.from('post_imagens').insert({image_url: pub.publicUrl, path, alt});
+  if(insErr){ console.error(insErr); showToast('Erro ao salvar imagem: '+insErr.message); return; }
+  await loadPostImagens();
+  renderMedia();
+  showToast('Imagem enviada — já disponível aqui e na galeria do editor de posts.');
+}
+
+async function excluirImagemAvulsa(id, path){
+  if(!confirm('Excluir esta imagem permanentemente? Se ela estiver em uso no corpo de algum post, vai parar de aparecer lá.')) return;
+  if(path){
+    const {error: delErr} = await db.storage.from('post-imagens').remove([path]);
+    if(delErr) console.error(delErr);
+  }
+  const {error} = await db.from('post_imagens').delete().eq('id', id);
+  if(error){ console.error(error); showToast('Erro ao excluir: '+error.message); return; }
+  await loadPostImagens();
+  renderMedia();
+  showToast('Imagem excluída.');
 }
 
 function showSitemap(){
