@@ -2,11 +2,13 @@ name: Supabase Heartbeat
 
 on:
   schedule:
-    - cron: '0 9 * * 0,3' # domingo e quarta, 9h UTC
+    # a cada 6h -> 4x/dia, bem dentro da janela de 7 dias do free tier
+    # mesmo se o GitHub atrasar/pular uma execução, sobra folga
+    - cron: '0 */6 * * *'
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # necessário para o commit anti-hibernação
+  contents: write   # necessário para o commit anti-hibernação (mantém o repo/Actions ativos)
   issues: write      # necessário para abrir Issue em caso de falha
 
 jobs:
@@ -16,71 +18,147 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v5
 
-      - name: Ping Supabase (heartbeat table)
-        id: read
+      - name: Checar secrets obrigatórias
         run: |
-          if [ -z "${{ secrets.SUPABASE_URL }}" ] || [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
-            echo "::error::SUPABASE_URL ou SUPABASE_ANON_KEY não configurados nos Secrets do repositório."
+          missing=()
+          [ -z "${{ secrets.SUPABASE_URL }}" ] && missing+=("SUPABASE_URL")
+          [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ] && missing+=("SUPABASE_ANON_KEY")
+          [ -z "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ] && missing+=("SUPABASE_SERVICE_ROLE_KEY")
+          [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ] && missing+=("SUPABASE_PROJECT_REF")
+          [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] && missing+=("SUPABASE_ACCESS_TOKEN")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Secrets faltando no repositório: ${missing[*]}"
             exit 1
           fi
 
-          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X GET \
+      - name: Consultar status do projeto (Management API)
+        id: status
+        run: |
+          set +e
+          HTTP=$(curl -sS --retry 3 --retry-delay 5 --connect-timeout 10 \
+            -o status.json -w "%{http_code}" \
+            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_REF }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}")
+          CURL_EXIT=$?
+          set -e
+          echo "HTTP: $HTTP / curl exit: $CURL_EXIT"
+          echo "Resposta:"; cat status.json 2>/dev/null || true
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::warning::Falha de rede/DNS ao consultar a Management API (curl exit $CURL_EXIT). Prosseguindo mesmo assim."
+            echo "state=UNKNOWN" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$HTTP" -ge 400 ]; then
+            echo "::warning::Management API retornou HTTP $HTTP (verifique SUPABASE_ACCESS_TOKEN / SUPABASE_PROJECT_REF)."
+            echo "state=UNKNOWN" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          STATE=$(grep -o '"status":"[A-Za-z_]*"' status.json | head -1 | cut -d'"' -f4)
+          echo "Estado do projeto: $STATE"
+          echo "state=$STATE" >> "$GITHUB_OUTPUT"
+
+      - name: Restaurar projeto se estiver pausado
+        if: steps.status.outputs.state == 'INACTIVE' || steps.status.outputs.state == 'PAUSED'
+        run: |
+          echo "Projeto pausado (estado: ${{ steps.status.outputs.state }}). Solicitando restore..."
+          HTTP=$(curl -sS -o restore.json -w "%{http_code}" -X POST \
+            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_REF }}/restore" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}")
+          echo "HTTP restore: $HTTP"
+          cat restore.json 2>/dev/null || true
+
+          echo "Aguardando o projeto voltar a ACTIVE_HEALTHY (até ~5 min)..."
+          for i in $(seq 1 10); do
+            sleep 30
+            CUR=$(curl -sS "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_REF }}" \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+              | grep -o '"status":"[A-Za-z_]*"' | head -1 | cut -d'"' -f4)
+            echo "tentativa $i: $CUR"
+            if [ "$CUR" = "ACTIVE_HEALTHY" ]; then
+              echo "Projeto restaurado com sucesso."
+              break
+            fi
+          done
+
+      - name: Ping Supabase (SELECT na tabela heartbeat)
+        id: read
+        run: |
+          set +e
+          HTTP=$(curl -sS --retry 3 --retry-delay 5 --connect-timeout 10 \
+            -o response.json -w "%{http_code}" -X GET \
             "${{ secrets.SUPABASE_URL }}/rest/v1/heartbeat?select=id&order=id.desc&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          CURL_EXIT=$?
+          set -e
+          echo "HTTP: $HTTP / curl exit: $CURL_EXIT"
+          echo "Resposta:"; cat response.json 2>/dev/null || true
 
-          echo "HTTP status: $HTTP_STATUS"
-          echo "Resposta:"
-          cat response.json
-
-          if [ "$HTTP_STATUS" -ge 400 ]; then
-            echo "::error::Falha no SELECT do heartbeat (HTTP $HTTP_STATUS)."
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::curl falhou (exit $CURL_EXIT) ao acessar SUPABASE_URL — problema de DNS/rede/conexão, não de HTTP."
+            exit 22
+          fi
+          if [ "$HTTP" -ge 400 ]; then
+            echo "::error::Falha no SELECT do heartbeat (HTTP $HTTP)."
             exit 22
           fi
 
-      - name: Insert new heartbeat row
+      - name: Inserir nova linha de heartbeat
         id: insert
         run: |
-          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+          set +e
+          HTTP=$(curl -sS --retry 3 --retry-delay 5 --connect-timeout 10 \
+            -o response.json -w "%{http_code}" -X POST \
             "${{ secrets.SUPABASE_URL }}/rest/v1/heartbeat" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json" \
             -H "Prefer: return=minimal" \
             -d '{}')
+          CURL_EXIT=$?
+          set -e
+          echo "HTTP: $HTTP / curl exit: $CURL_EXIT"
+          echo "Resposta:"; cat response.json 2>/dev/null || true
 
-          echo "HTTP status: $HTTP_STATUS"
-          echo "Resposta:"
-          cat response.json
-
-          if [ "$HTTP_STATUS" -ge 400 ]; then
-            echo "::error::Falha no INSERT do heartbeat (HTTP $HTTP_STATUS)."
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::curl falhou (exit $CURL_EXIT) no INSERT — problema de DNS/rede/conexão."
+            exit 22
+          fi
+          if [ "$HTTP" -ge 400 ]; then
+            echo "::error::Falha no INSERT do heartbeat (HTTP $HTTP)."
             exit 22
           fi
 
-      - name: Delete heartbeat rows older than 7 days
+      - name: Apagar linhas de heartbeat com mais de 7 dias
         id: cleanup
         run: |
+          set +e
           CUTOFF=$(date -u -d '7 days ago' +"%Y-%m-%dT%H:%M:%SZ")
-
-          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X DELETE \
+          HTTP=$(curl -sS --retry 3 --retry-delay 5 --connect-timeout 10 \
+            -o response.json -w "%{http_code}" -X DELETE \
             "${{ secrets.SUPABASE_URL }}/rest/v1/heartbeat?created_at=lt.${CUTOFF}" \
             -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Prefer: return=minimal")
+          CURL_EXIT=$?
+          set -e
+          echo "HTTP: $HTTP / curl exit: $CURL_EXIT"
+          echo "Resposta:"; cat response.json 2>/dev/null || true
 
-          echo "HTTP status: $HTTP_STATUS"
-          echo "Resposta:"
-          cat response.json
-
-          if [ "$HTTP_STATUS" -ge 400 ]; then
-            echo "::error::Falha no DELETE do heartbeat (HTTP $HTTP_STATUS)."
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::curl falhou (exit $CURL_EXIT) no DELETE — problema de DNS/rede/conexão."
+            exit 22
+          fi
+          if [ "$HTTP" -ge 400 ]; then
+            echo "::error::Falha no DELETE do heartbeat (HTTP $HTTP)."
             exit 22
           fi
           # Nota: DELETE via anon/publishable key normalmente é bloqueado por RLS (o que é bom!).
-          # Por isso essa etapa usa a secret key (antiga service_role), que ignora RLS.
+          # Por isso essa etapa usa a service_role key, que ignora RLS.
 
-      - name: Update last-run marker (keeps repo active)
+      - name: Atualizar marcador de última execução (mantém o repo ativo)
         run: |
           mkdir -p .heartbeat
           echo "Last successful run: $(date -u +"%Y-%m-%dT%H:%M:%SZ")" > .heartbeat/last-run.txt
@@ -90,7 +168,7 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: heartbeat run $(date -u +%Y-%m-%d)"
           git push
 
-      - name: Open issue on failure
+      - name: Abrir issue em caso de falha
         if: failure()
         uses: actions/github-script@v8
         with:
@@ -106,9 +184,11 @@ jobs:
                 '',
                 'Possíveis causas:',
                 '- Chave da API (anon/publishable ou service_role/secret) expirada ou revogada',
+                '- Token de acesso pessoal (SUPABASE_ACCESS_TOKEN) expirado/inválido',
                 '- RLS bloqueando SELECT/INSERT/DELETE',
-                '- Projeto Supabase já pausado (verifique o dashboard)',
-                '- URL do projeto incorreta'
+                '- Projeto Supabase pausado e o restore automático falhou (confira o dashboard)',
+                '- URL do projeto (SUPABASE_URL) ou referência (SUPABASE_PROJECT_REF) incorreta',
+                '- Falha de DNS/rede transitória no runner do GitHub Actions'
               ].join('\n'),
               labels: ['bug', 'heartbeat']
             });
